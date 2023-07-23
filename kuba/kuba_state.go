@@ -20,6 +20,14 @@ const (
   kPlayerBlack
 )
 
+type StatusT int
+const (
+  kOngoing StatusT = iota
+  kWhiteWon
+  kBlackWon
+  kDraw
+)
+
 type KubaConfig struct {
   StartingPosition [][]Marble
   WinThreshold int
@@ -43,14 +51,6 @@ type LastMoveT struct {
   Dy int
   Length int
 }
-
-type StatusT int
-const (
-  kOngoing StatusT = iota
-  kWhiteWon
-  kBlackWon
-  kDraw
-)
 
 type KubaState struct {
   Board [][]Marble
