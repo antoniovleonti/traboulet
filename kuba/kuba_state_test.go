@@ -2,26 +2,32 @@ package kuba
 
 import (
   "testing"
+  "time"
   // "fmt"
 )
 
 func TestCreateDefaultKubaState(t *testing.T) {
-  ok, kuba := CreateKubaState(GetDefaultKubaConfig())
-
-  if !ok {
-    t.Error("CreateKubaState returned not ok")
+  kubaWOClock := newKubaGame(0 * time.Second)
+  if kubaWOClock == nil {
+    t.Error("var kuba should not be nil")
   }
 
-  if kuba == nil {
+  if kubaWOClock.clockEnabled {
+    t.Error("clock should not be enabled")
+  }
+
+  kubaWClock := newKubaGame(60 * time.Second)
+  if kubaWOClock == nil {
     t.Error("var kuba should not be nil")
+  }
+
+  if !kubaWClock.clockEnabled {
+    t.Error("clock should be enabled")
   }
 }
 
 func TestIsInBounds(t *testing.T) {
-  ok, kuba := CreateKubaState(GetDefaultKubaConfig())
-  if !ok {
-    t.FailNow()
-  }
+  kuba := newKubaGame(0 * time.Second)
 
   inBoundsCases := [][2]int{
     {0, 0},
@@ -53,10 +59,10 @@ func TestIsInBounds(t *testing.T) {
 
 func TestValidateMove(t *testing.T) {
   // shorter names
-  var B, W, R, x Marble = kMarbleBlack, kMarbleWhite, kMarbleRed, kMarbleNil
+  var B, W, R, x Marble = marbleBlack, marbleWhite, marbleRed, marbleNil
 
-  config := KubaConfig{
-    StartingPosition: [][]Marble{
+  kuba := kubaGame {
+    board: [][]Marble{
       {W, W, W, W, W, W, W},
       {W, W, x, W, W, W, W},
       {W, W, W, W, W, W, B},
@@ -65,33 +71,26 @@ func TestValidateMove(t *testing.T) {
       {B, B, W, W, W, W, x},
       {W, x, x, x, x, B, B},
     },
-    WinThreshold: 7,
-    StartingPlayer: kPlayerWhite,
-    StartingScoreWhite: 0,
-    StartingScoreBlack: 0,
-  }
-  ok, kuba := CreateKubaState(config)
-  if !ok {
-    t.FailNow()
+    winThreshold: 7,
+    whoseTurn: agentWhite,
   }
 
   validCases := []Move{
-    Move{ Y: 1, X: 0, Dy: 0, Dx: 1, },
-    Move{ Y: 2, X: 0, Dy: 0, Dx: 1, },
-    Move{ Y: 3, X: 0, Dy: 0, Dx: 1, },
-    Move{ Y: 3, X: 0, Dy: 0, Dx: 1, },
-    Move{ Y: 6, X: 0, Dy: 0, Dx: 1, },
+    Move{ y: 1, x: 0, d: DirRight },
+    Move{ y: 2, x: 0, d: DirRight },
+    Move{ y: 3, x: 0, d: DirRight },
+    Move{ y: 3, x: 0, d: DirRight },
+    Move{ y: 6, x: 0, d: DirRight },
   }
 
   invalidCases := []Move{
-    Move{ Y: 0, X: 0, Dy: 0, Dx: 1, }, // Kills own marble
-    Move{ Y: 5, X: 0, Dy: 0, Dx: 1, }, // Wrong color marble
-    Move{ Y: 1, X: 1, Dy: 0, Dx: 1, }, // Blocked from behind
-    Move{ Y: 6, X: 0, Dy: 0, Dx: -1, }, // Kills own marble
-    Move{ Y: 0, X: 0, Dy: 1, Dx: 0, }, // Kills own marble
-    Move{ Y: 0, X: 0, Dy: 1, Dx: 1, }, // Nonsense dx, dy
-    Move{ Y: 0, X: 0, Dy: 2, Dx: 0, }, // Nonsense dx, dy
-    Move{ Y: 0, X: 0, Dy: -1, Dx: 1, }, // Nonsense dx, dy
+    Move{ y: 0, x: 0, d: DirRight }, // Kills own marble
+    Move{ y: 5, x: 0, d: DirRight }, // Wrong color marble
+    Move{ y: 1, x: 1, d: DirRight }, // Blocked from behind
+    Move{ y: 6, x: 0, d: DirLeft }, // Kills own marble
+    Move{ y: 0, x: 0, d: DirDown }, // Kills own marble
+    Move{ y: 0, x: 0, d: DirNil }, // Nonsense dx, dy
+    Move{ y: 0, x: 0, d: Direction(8)}, // Nonsense dx, dy
   }
 
   for idx, valid := range validCases {
@@ -106,147 +105,141 @@ func TestValidateMove(t *testing.T) {
   }
 }
 
-func TestPlayerToMarbleConversion(t *testing.T) {
-  if kPlayerWhite.marble() != kMarbleWhite {
-    t.Fail()
-  }
-  if kPlayerBlack.marble() != kMarbleBlack {
-    t.Fail()
-  }
-  if kPlayerNoOne.marble() != kMarbleNil {
-    t.Fail()
-  }
-}
-
-func TestOtherPlayer(t *testing.T) {
-  if kPlayerWhite.otherPlayer() != kPlayerBlack {
-    t.Fail()
-  }
-  if kPlayerBlack.otherPlayer() != kPlayerWhite {
-    t.Fail()
-  }
-}
-
 func TestExecuteMove(t *testing.T) {
-  ok, kuba := CreateKubaState(GetDefaultKubaConfig())
-  if !ok {
-    t.FailNow()
-  }
+  kuba := newKubaGame(500 * time.Millisecond)
 
-  moves := []struct{
+  type moveTest struct {
     move Move
     valid bool
     score bool
-  }{
-    { move: Move{ X: 0, Y: 0, Dx: 1, Dy: 0}, valid: true, score: false},
-    { move: Move{ X: 6, Y: 0, Dx: -1, Dy: 0}, valid: true, score: false },
-    { move: Move{ X: 1, Y: 0, Dx: 1, Dy: 0}, valid: true, score: false },
-    { move: Move{ X: 5, Y: 0, Dx: -1, Dy: 0}, valid: true, score: false },
+    sleep time.Duration
+  }
+
+  runOutOfTime := []moveTest{
+    { move: Move{ x: 0, y: 0, d: DirRight },
+      valid: true, score: false, sleep: 50 * time.Millisecond },
+    { move: Move{ x: 6, y: 0, d: DirLeft },
+      valid: true, score: false, sleep: 50 * time.Millisecond },
+    { move: Move{ x: 1, y: 0, d: DirRight },
+      valid: true, score: false, sleep: 50 * time.Millisecond },
+    { move: Move{ x: 5, y: 0, d: DirLeft },
+      valid: true, score: false, sleep: 50 * time.Millisecond },
     // ko rule
-    { move: Move{ X: 1, Y: 0, Dx: 1, Dy: 0}, valid: false, score: false },
+    { move: Move{ x: 1, y: 0, d: DirRight },
+      valid: false, score: false, sleep: 50 * time.Millisecond },
     // out of turn
-    { move: Move{ X: 4, Y: 0, Dx: -1, Dy: 0}, valid: false, score: false },
-    { move: Move{ X: 1, Y: 0, Dx: 0, Dy: 1}, valid: true, score: false },
-    { move: Move{ X: 3, Y: 0, Dx: 0, Dy: 1}, valid: true, score: false },
-    { move: Move{ X: 0, Y: 1, Dx: 1, Dy: 0}, valid: true, score: false },
-    { move: Move{ X: 3, Y: 1, Dx: 0, Dy: 1}, valid: true, score: true },
+    { move: Move{ x: 4, y: 0, d: DirLeft },
+      valid: false, score: false, sleep: 50 * time.Millisecond },
+    { move: Move{ x: 1, y: 0, d: DirDown },
+      valid: true, score: false, sleep: 50 * time.Millisecond },
+    { move: Move{ x: 3, y: 0, d: DirDown },
+      valid: true, score: false, sleep: 50 * time.Millisecond },
+    { move: Move{ x: 0, y: 1, d: DirRight },
+      valid: true, score: false, sleep: 50 * time.Millisecond },
+    // timeout
+    { move: Move{ x: 3, y: 1, d: DirDown },
+      valid: false, score: false, sleep: 450 * time.Millisecond },
   }
 
-  // For diffing scores between test cases
-  prevScores := make(map[Player]int)
-  prevPlayer := kuba.Turn
+  playTestCases := func(moves []moveTest) {
+    // For diffing scores between test cases
+    prevScores := make(map[AgentColor]int)
+    prevPlayer := kuba.whoseTurn
 
-  for idx, testCase := range moves {
-    if ok, _ := kuba.ExecuteMove(testCase.move); ok != testCase.valid {
-      t.Errorf("moves[%d]: expected valid == %t, got %t",
-               idx, testCase.valid, ok)
+    for idx, testCase := range moves {
+      time.Sleep(testCase.sleep)
+      if ok, _ := kuba.ExecuteMove(testCase.move); ok != testCase.valid {
+        t.Errorf("moves[%d]: expected valid == %t, got %t",
+                 idx, testCase.valid, ok)
+      }
+
+      score_diff := prevScores[prevPlayer] != kuba.agents[prevPlayer].score
+      if testCase.score && !score_diff {
+        t.Errorf("moves[%d]: expected score, but score didn't change", idx)
+      } else if !testCase.score && score_diff {
+        t.Errorf("moves[%d]: expected no score, but score changed", idx)
+      }
+
+      prevPlayer = kuba.whoseTurn
+      for k, v := range kuba.agents {
+        prevScores[k] = v.score
+      }
     }
-
-    score_diff := prevScores[prevPlayer] != kuba.PlayerToScore[prevPlayer]
-    if testCase.score && !score_diff {
-      t.Errorf("moves[%d]: expected score, but score didn't change", idx)
-    } else if !testCase.score && score_diff {
-      t.Errorf("moves[%d]: expected no score, but score changed", idx)
-    }
-
-    prevPlayer = kuba.Turn
-    for k, v := range kuba.PlayerToScore {
-      prevScores[k] = v
-    }
   }
-}
-
-func TestPlayerToWinStatus(t *testing.T) {
-  if kPlayerWhite.winStatus() != kWhiteWon {
-    t.Fail()
-  }
-  if kPlayerBlack.winStatus() != kBlackWon {
-    t.Fail()
-  }
+  playTestCases(runOutOfTime)
 }
 
 func TestGetStatus(t *testing.T) {
   type TestCase struct {
-    config KubaConfig
-    status StatusT
+    // No need to create a map for the kubaGame; this will be handled before
+    // the test happens
+    kuba kubaGame
+    overrideWhiteScore int
+    overrideBlackScore int
+    status Status
   }
 
-  var x, _, B, W Marble = kMarbleNil, kMarbleRed, kMarbleBlack, kMarbleWhite
+  var x, _, B, W Marble = marbleNil, marbleRed, marbleBlack, marbleWhite
 
   testCases := []TestCase {
     {  // No valid moves for white
-      config: KubaConfig {
-        StartingPosition: [][]Marble{ {W, W}, {W, W}, },
-        WinThreshold: 7,
-        StartingPlayer: kPlayerWhite,
+      kuba: kubaGame {
+        board: [][]Marble{ {W, W}, {W, W}, },
+        winThreshold: 7,
+        whoseTurn: agentWhite,
       },
-      status: kBlackWon,
+      status: statusBlackWon,
     },
     {  // No valid moves for black (lost all marbles)
-      config: KubaConfig {
-        StartingPosition: [][]Marble{ {W, x}, {x, x}, },
-        WinThreshold: 7,
-        StartingPlayer: kPlayerBlack,
+      kuba: kubaGame {
+        board: [][]Marble{ {W, x}, {x, x}, },
+        winThreshold: 7,
+        whoseTurn: agentBlack,
       },
-      status: kWhiteWon,
+      status: statusWhiteWon,
     },
     {  // Win by score (white)
-      config: KubaConfig {
-        StartingPosition: [][]Marble{ {W, x}, {x, B}, },
-        WinThreshold: 7,
-        StartingPlayer: kPlayerBlack,
-        StartingScoreWhite: 7,
+      kuba: kubaGame {
+        board: [][]Marble{ {W, x}, {x, B}, },
+        winThreshold: 7,
+        whoseTurn: agentBlack,
       },
-      status: kWhiteWon,
+      overrideWhiteScore: 7,
+      status: statusWhiteWon,
     },
     {  // Win by score (white)
-      config: KubaConfig {
-        StartingPosition: [][]Marble{ {W, x}, {x, B}, },
-        WinThreshold: 7,
-        StartingPlayer: kPlayerWhite,
-        StartingScoreBlack: 7,
+      kuba: kubaGame {
+        board: [][]Marble{ {W, x}, {x, B}, },
+        winThreshold: 7,
+        whoseTurn: agentWhite,
       },
-      status: kBlackWon,
+      overrideBlackScore: 7,
+      status: statusBlackWon,
     },
     {  // No win
-      config: KubaConfig {
-        StartingPosition: [][]Marble{ {W, x}, {x, B}, },
-        WinThreshold: 7,
-        StartingPlayer: kPlayerWhite,
+      kuba: kubaGame {
+        board: [][]Marble{ {W, x}, {x, B}, },
+        winThreshold: 7,
+        whoseTurn: agentWhite,
       },
-      status: kOngoing,
+      status: statusOngoing,
     },
   }
 
   for idx, test := range testCases {
-    ok, kuba := CreateKubaState(test.config)
-    if !ok {
-      t.Errorf("testCases[%d]: CreateKubaState failed", idx)
-      continue
+    test.kuba.agents = make(map[AgentColor]*agent)
+    test.kuba.agents[agentWhite] = &agent{
+      score: test.overrideWhiteScore,
     }
-
-    if actual := kuba.getStatus(); actual != test.status {
+    test.kuba.agents[agentBlack] = &agent{
+      score: test.overrideBlackScore,
+    }
+    if actual := test.kuba.getStatus(); actual != test.status {
       t.Errorf("testCases[%d]: status %d != %d", idx, actual, test.status)
     }
   }
+}
+
+func TestTimedTurns(t *testing.T) {
+  
 }

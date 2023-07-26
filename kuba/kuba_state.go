@@ -1,186 +1,125 @@
 package kuba
 
 import (
+  "time"
   // "math"
   // "fmt"
 )
 
 type Marble int
 const (
-  kMarbleNil Marble = iota
-  kMarbleWhite
-  kMarbleBlack
-  kMarbleRed
+  marbleNil Marble = iota
+  marbleWhite
+  marbleBlack
+  marbleRed
 )
 
-type Player int
+type Status int
 const (
-  kPlayerNoOne Player = iota
-  kPlayerWhite
-  kPlayerBlack
+  statusOngoing Status = iota
+  statusWhiteWon
+  statusBlackWon
+  statusDraw
 )
 
-type StatusT int
-const (
-  kOngoing StatusT = iota
-  kWhiteWon
-  kBlackWon
-  kDraw
-)
-
-type KubaConfig struct {
-  StartingPosition [][]Marble
-  WinThreshold int
-  StartingPlayer Player
-  StartingScoreWhite int
-  StartingScoreBlack int
-  MaxMoves int
+type kubaGame struct {
+  board [][]Marble
+  agents map[AgentColor]*agent
+  ko *Move
+  lastMove *lastMoveT
+  whoseTurn AgentColor
+  winThreshold int
+  status Status
+  clockEnabled bool
 }
 
-type Move struct {
-  X int
-  Y int
-  Dx int
-  Dy int
-}
+func newKubaGame(playerTime time.Duration) *kubaGame {
+  var x, R, B, W Marble = marbleNil, marbleRed, marbleBlack, marbleWhite
+  startPosition := [][]Marble{
+    {W, W, x, x, x, B, B},
+    {W, W, x, R, x, B, B},
+    {x, x, R, R, R, x, x},
+    {x, R, R, R, R, R, x},
+    {x, x, R, R, R, x, x},
+    {B, B, x, R, x, W, W},
+    {B, B, x, x, x, W, W},
+  }
 
-type LastMoveT struct {
-  X int
-  Y int
-  Dx int
-  Dy int
-  Length int
-}
+  agents := make(map[AgentColor]*agent)
+  agents[agentWhite] = &agent {
+    score: 0,
+    time: playerTime,
+  }
+  agents[agentBlack] = &agent {
+    score: 0,
+    time: playerTime,
+  }
 
-type KubaState struct {
-  Board [][]Marble
-  PlayerToScore map[Player]int
-  Ko *Move
-  LastMove *LastMoveT
-  Turn Player
-  WinThreshold int
-  Status StatusT
-  MoveCount int
-  MaxMoves int
-}
-
-func (p Player) marble() Marble {
-  return Marble(p)
-}
-
-func (p Player) otherPlayer() Player {
-  return p % 2 + 1
-}
-
-func (p Player) winStatus() StatusT {
-  return StatusT(p)
-}
-
-func GetDefaultKubaConfig() KubaConfig {
-  var x, R, B, W Marble = kMarbleNil, kMarbleRed, kMarbleBlack, kMarbleWhite
-  return KubaConfig{
-    StartingPosition: [][]Marble{
-      {W, W, x, x, x, B, B},
-      {W, W, x, R, x, B, B},
-      {x, x, R, R, R, x, x},
-      {x, R, R, R, R, R, x},
-      {x, x, R, R, R, x, x},
-      {B, B, x, R, x, W, W},
-      {B, B, x, x, x, W, W},
-    },
-    WinThreshold: 7,
-    StartingPlayer: kPlayerWhite,
-    StartingScoreWhite: 0,
-    StartingScoreBlack: 0,
+  return &kubaGame{
+    agents: agents,
+    board: startPosition,
+    whoseTurn: agentWhite,
+    winThreshold: 7,
+    clockEnabled: playerTime > 0 * time.Second,
   }
 }
 
-func CreateKubaState(config KubaConfig) (
-    ok bool, state *KubaState) {
-  boardSize := len(config.StartingPosition)
-  for _, row := range config.StartingPosition {
-    if boardSize != len(row) {
-      return false, nil
-    }
-  }
-
-  scores := make(map[Player]int)
-  scores[kPlayerWhite] = config.StartingScoreWhite
-  scores[kPlayerBlack] = config.StartingScoreBlack
-
-  return true, &KubaState{
-    PlayerToScore: scores,
-    Board: config.StartingPosition,
-    Turn: config.StartingPlayer,
-    WinThreshold: config.WinThreshold,
-    Ko: nil,
-    LastMove: nil,
-  }
+func (kg *kubaGame) boardSize() int {
+  return len(kg.board)
 }
 
-func (ks *KubaState) boardSize() int {
-  return len(ks.Board)
+func (kg *kubaGame) isInBounds(x, y int) bool {
+  return x >= 0 && x < kg.boardSize() && y >= 0 && y < kg.boardSize()
 }
 
-func (ks *KubaState) isInBounds(x, y int) bool {
-  return x >= 0 && x < ks.boardSize() && y >= 0 && y < ks.boardSize()
-}
-
-func (ks *KubaState) ValidateMove(move Move) bool {
+func (kg *kubaGame) ValidateMove(move Move) bool {
   // Check the game is not already over
-  if ks.Status != kOngoing {
+  if kg.status != statusOngoing {
     return false
   }
 
-  // Check that dx, dy makes sense
-  absDx, absDy := move.Dx, move.Dy
-  if move.Dx < 0 {
-    absDx *= -1
-  }
-  if move.Dy < 0 {
-    absDy *= -1
-  }
-  if ((absDx == 1) == (absDy == 1)) || (absDx > 1 || absDy > 1) {
+  // Validate direction
+  if !move.d.isValid() {
     return false
   }
 
   // Check bounds
-  if !ks.isInBounds(move.X, move.Y)  ||
-     !ks.isInBounds(move.X + move.Dx, move.Y + move.Dy) {
+  if !kg.isInBounds(move.x, move.y)  ||
+     !kg.isInBounds(move.x + move.dx(), move.y + move.dy()) {
     return false
   }
 
   // Check that move is in turn
-  if ks.Board[move.Y][move.X] != ks.Turn.marble() {
+  if kg.board[move.y][move.x] != kg.whoseTurn.marble() {
     return false
   }
 
   // Check ko rule
-  if ks.Ko != nil && move == *ks.Ko {
+  if kg.ko != nil && move == *kg.ko {
     return false
   }
 
   // Check that no piece is blocking this move from behind
-  if behindx, behindy := move.X - move.Dx, move.Y - move.Dy;
-      ks.isInBounds(behindx, behindy) &&
-      ks.Board[behindy][behindx] != kMarbleNil {
+  if behindx, behindy := move.x - move.dx(), move.y - move.dy();
+      kg.isInBounds(behindx, behindy) &&
+      kg.board[behindy][behindx] != marbleNil {
     return false
   }
 
   // Check that you are not pushing your own piece off the board
   foundEmpty := false
-  var x, y int = move.X, move.Y
-  for ; ks.isInBounds(x, y); x, y = x + move.Dx, y + move.Dy {
-    if ks.Board[y][x] == kMarbleNil {
+  var x, y int = move.x, move.y
+  for ; kg.isInBounds(x, y); x, y = x + move.dx(), y + move.dy() {
+    if kg.board[y][x] == marbleNil {
       foundEmpty = true
       break
     }
   }
   if !foundEmpty {
     // Move back one step to the last valid position
-    y -= move.Dy
-    x -= move.Dx
-    if ks.Board[x][y] == ks.Turn.marble() {
+    y -= move.dy()
+    x -= move.dx()
+    if kg.board[x][y] == kg.whoseTurn.marble() {
       return false
     }
   }
@@ -188,15 +127,16 @@ func (ks *KubaState) ValidateMove(move Move) bool {
   return true
 }
 
-func (ks *KubaState) validMoveExists() bool {
-  for x := 0; x < ks.boardSize(); x++ {
-    for y := 0; y < ks.boardSize(); y++ {
-      if ks.Board[y][x] != ks.Turn.marble() {
+func (kg *kubaGame) validMoveExists() bool {
+  for x := 0; x < kg.boardSize(); x++ {
+    for y := 0; y < kg.boardSize(); y++ {
+      if kg.board[y][x] != kg.whoseTurn.marble() {
         continue
       }
       for dx := range []int{-1, 0, 1} {
         for dy := range []int{-1, 0, 1} {
-          if ks.ValidateMove(Move{ X: x, Y: y, Dx: dx, Dy: dy }) {
+          if ok, dir := directionFromDxDy(dx, dy);
+              ok && kg.ValidateMove(Move{ x: x, y: y, d: dir }) {
             return true
           }
         }
@@ -206,60 +146,75 @@ func (ks *KubaState) validMoveExists() bool {
   return false
 }
 
-func (ks *KubaState) getStatus() StatusT {
+func (kg *kubaGame) getStatus() Status {
   // Check for preexisting "sticky" status
-  if ks.Status != kOngoing {
-    return ks.Status
+  if kg.status != statusOngoing {
+    return kg.status
   }
 
   // Win by score
-  for k, v := range ks.PlayerToScore {
-    if v >= ks.WinThreshold {
-      return k.winStatus()
+  for t, p := range kg.agents {
+    if p.score >= kg.winThreshold {
+      return t.winStatus()
     }
   }
 
   // Win by entrapment
-  if !ks.validMoveExists() {
-    return ks.Turn.otherPlayer().winStatus()
+  if !kg.validMoveExists() {
+    return kg.whoseTurn.otherAgent().winStatus()
   }
 
-  return kOngoing
+  return statusOngoing
 }
 
-func (ks *KubaState) ExecuteMove(move Move) (ok bool, status StatusT) {
-  if !ks.ValidateMove(move) {
-    return false, ks.Status
+func (kg *kubaGame) ExecuteMove(move Move) (ok bool, status Status) {
+  if !kg.ValidateMove(move) {
+    return false, kg.status
   }
 
-  tmp := kMarbleNil
-  var x, y int = move.X, move.Y
-  for ; ks.isInBounds(x, y); x, y = x + move.Dx, y + move.Dy {
-    ks.Board[y][x], tmp = tmp, ks.Board[y][x]  // swap
-    if tmp == kMarbleNil {
+  tmp := marbleNil
+  var x, y int = move.x, move.y
+  for ; kg.isInBounds(x, y); x, y = x + move.dx(), y + move.dy() {
+    kg.board[y][x], tmp = tmp, kg.board[y][x]  // swap
+    if tmp == marbleNil {
       break;
     }
   }
   // A red marble was pushed off the board
-  if !ks.isInBounds(x, y) && tmp == kMarbleRed {
-    ks.PlayerToScore[ks.Turn]++
+  if !kg.isInBounds(x, y) && tmp == marbleRed {
+    kg.agents[kg.whoseTurn].score++
   }
   // Check for ko
-  ks.Ko = nil
-  if !ks.isInBounds(x, y) {
-    x -= move.Dx
-    y -= move.Dy
+  kg.ko = nil
+  if !kg.isInBounds(x, y) {
+    x -= move.dx()
+    y -= move.dy()
   }
-  if ks.Board[y][x] == ks.Turn.otherPlayer().marble() {
-    ks.Ko = &Move{
-      X: x,
-      Y: y,
-      Dx: -move.Dx,
-      Dy: -move.Dy,
+  if kg.board[y][x] == kg.whoseTurn.otherAgent().marble() {
+    kg.ko = &Move{
+      x: x,
+      y: y,
+      d: move.d.reverse(),
     }
   }
 
-  ks.Turn = ks.Turn.otherPlayer()
-  ks.Status = ks.getStatus()
-  return true, ks.Status
+  if kg.clockEnabled && !kg.agents[kg.whoseTurn].endTurn() {
+    panic("end turn failed!")
+  }
+
+  kg.whoseTurn = kg.whoseTurn.otherAgent()
+
+  kg.status = kg.getStatus()
+  if kg.status == statusOngoing && kg.clockEnabled {
+    if !kg.agents[kg.whoseTurn].startTurn(kg.playerTimeoutCallback) {
+      panic("startTurn failed!")
+    }
+  }
+
+  return true, kg.status
+}
+
+func (kg *kubaGame) playerTimeoutCallback() {
+  // The other team just won
+  kg.status = kg.whoseTurn.otherAgent().winStatus()
 }
