@@ -2,17 +2,11 @@ package kuba
 
 import (
   "time"
+  "sync"
   // "math"
   // "fmt"
 )
 
-type Marble int
-const (
-  marbleNil Marble = iota
-  marbleWhite
-  marbleBlack
-  marbleRed
-)
 
 type Status int
 const (
@@ -22,15 +16,30 @@ const (
   statusDraw
 )
 
+func (s Status) String() string {
+  if s == statusOngoing {
+    return "ONGOING"
+  } else if s == statusWhiteWon {
+    return "WHITE_WON"
+  } else if s == statusBlackWon {
+    return "BLACK_WON"
+  } else if s == statusDraw {
+    return "DRAW"
+  } else {
+    panic("Invalid Status!")
+  }
+}
+
 type kubaGame struct {
-  board [][]Marble
+  board BoardT
   agents map[AgentColor]*agent
   ko *Move
-  lastMove *lastMoveT
+  lastMove *LastMoveT
   whoseTurn AgentColor
   winThreshold int
   status Status
   clockEnabled bool
+  mutex sync.RWMutex
 }
 
 func newKubaGame(playerTime time.Duration) *kubaGame {
@@ -146,7 +155,7 @@ func (kg *kubaGame) validMoveExists() bool {
   return false
 }
 
-func (kg *kubaGame) getStatus() Status {
+func (kg *kubaGame) updateStatus() Status {
   // Check for preexisting "sticky" status
   if kg.status != statusOngoing {
     return kg.status
@@ -167,9 +176,12 @@ func (kg *kubaGame) getStatus() Status {
   return statusOngoing
 }
 
-func (kg *kubaGame) ExecuteMove(move Move) (ok bool, status Status) {
+func (kg *kubaGame) ExecuteMove(move Move) bool {
+  kg.mutex.Lock()
+  defer kg.mutex.Unlock()
+
   if !kg.ValidateMove(move) {
-    return false, kg.status
+    return false
   }
 
   tmp := marbleNil
@@ -204,17 +216,31 @@ func (kg *kubaGame) ExecuteMove(move Move) (ok bool, status Status) {
 
   kg.whoseTurn = kg.whoseTurn.otherAgent()
 
-  kg.status = kg.getStatus()
+  kg.status = kg.updateStatus()
   if kg.status == statusOngoing && kg.clockEnabled {
     if !kg.agents[kg.whoseTurn].startTurn(kg.playerTimeoutCallback) {
       panic("startTurn failed!")
     }
   }
 
-  return true, kg.status
+  return true
 }
 
 func (kg *kubaGame) playerTimeoutCallback() {
+  kg.mutex.Lock()
+  defer kg.mutex.Unlock()
+
   // The other team just won
   kg.status = kg.whoseTurn.otherAgent().winStatus()
+}
+
+func (kg *kubaGame) resign(agent AgentColor) bool {
+  kg.mutex.Lock()
+  defer kg.mutex.Unlock()
+
+  if kg.status != statusOngoing {
+    return false
+  }
+  kg.status = agent.otherAgent().winStatus()
+  return true
 }

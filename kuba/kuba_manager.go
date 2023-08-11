@@ -2,10 +2,10 @@ package kuba
 
 import (
 	"net/http"
-	crand "crypto/rand"
+	"crypto/rand"
   "encoding/base64"
-  mrand "math/rand"
   "time"
+  "encoding/json"
 )
 
 type User struct {
@@ -14,20 +14,43 @@ type User struct {
   color AgentColor
 }
 
+type clientViewPlayer struct {
+  ID string `json:"id"`
+  TimeNs int64 `json:"time_ns"`
+  Deadline *time.Time `json:"deadline,omitempty"`
+}
+
+type ClientView struct {
+  Board BoardT `json:"board"`
+  Status string `json:"status"`
+  Ko *Move `json:"ko"`
+  LastMove *LastMoveT `json:"last_move"`
+  WhoseTurn string `json:"whose_turn"` // color of current player
+  WinThreshold int `json:"win_threshold"`
+  ClockEnabled bool `json:"clock_enableed"`
+  ColorToPlayer map[string]clientViewPlayer `json:"color_to_player"`
+}
+
 type KubaManager struct {
   state *kubaGame
   asyncCh chan struct{}
   cookieToUser map[*http.Cookie]*User
+  colorToUser map[AgentColor]*User
   path string
 }
 
-func newKubaManager(t time.Duration, path string) *KubaManager {
-  return &KubaManager {
+func NewKubaManager(path string, t time.Duration, idWhite, idBlack string) (
+    *KubaManager) {
+  km := &KubaManager {
     state: newKubaGame(t),
     asyncCh: make(chan struct{}),
     cookieToUser: make(map[*http.Cookie]*User),
+    colorToUser: make(map[AgentColor]*User),
     path: path,
   }
+  km.setUser(agentWhite, idWhite)
+  km.setUser(agentBlack, idBlack)
+  return km
 }
 
 func (km *KubaManager) newCookie(id string) *http.Cookie {
@@ -41,33 +64,62 @@ func (km *KubaManager) newCookie(id string) *http.Cookie {
 
 func getRandBase64String(length int) string {
   randomBytes := make([]byte, length)
-  _, err := crand.Read(randomBytes)
+  _, err := rand.Read(randomBytes)
   if err != nil {
     panic(err)
   }
   return base64.StdEncoding.EncodeToString(randomBytes)[:length]
 }
 
-func (km *KubaManager) newUser(id string) bool {
-  if len(km.cookieToUser) > 1 {
-    // Sorry, the game is full!
-    return false
-  }
-
-  var color AgentColor
-  if len(km.cookieToUser) == 0 {
-    color = AgentColor(mrand.Intn(2) + 1)
-  } else /* => len(...) == 1 */ {
-    for _, v := range km.cookieToUser {
-      color = v.color.otherAgent()
-    }
-  }
-
+func (km *KubaManager) setUser(color AgentColor, id string) bool {
   u := User {
     id: id,
     cookie: km.newCookie(id),
     color: color,
   }
   km.cookieToUser[u.cookie] = &u
+  km.colorToUser[color] = &u
   return true
+}
+
+func (km *KubaManager) tryMove(m Move, c *http.Cookie) bool {
+  if user, ok := km.cookieToUser[c]; !ok || user.color != km.state.whoseTurn {
+    return false
+  }
+  return km.state.ExecuteMove(m)
+}
+
+func (km *KubaManager) tryResign(c *http.Cookie) bool {
+  user, ok := km.cookieToUser[c]
+  if !ok {
+    return false
+  }
+  return km.state.resign(user.color)
+}
+
+func (km KubaManager) GetClientView() ClientView {
+  colorToPlayer := make(map[string]clientViewPlayer)
+  for k, v := range km.colorToUser {
+    agent := km.state.agents[k]
+    colorToPlayer[k.String()] = clientViewPlayer{
+      ID: v.id,
+      TimeNs: agent.time.Nanoseconds(),
+      Deadline: agent.deadline,
+    }
+  }
+
+  return ClientView {
+    Board: km.state.board,
+    Status: km.state.status.String(),
+    Ko: km.state.ko,
+    LastMove: km.state.lastMove,
+    WhoseTurn: km.state.whoseTurn.String(),
+    WinThreshold: km.state.winThreshold,
+    ClockEnabled: km.state.clockEnabled,
+    ColorToPlayer: colorToPlayer,
+  }
+}
+
+func (km KubaManager) MarshalJSON() ([]byte, error) {
+  return json.Marshal(km.GetClientView())
 }

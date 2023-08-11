@@ -16,6 +16,16 @@ type agent struct {
   timer *time.Timer
 }
 
+func (ac AgentColor) String() string {
+  if ac == agentWhite {
+    return "WHITE"
+  } else if ac == agentBlack {
+    return "BLACK"
+  } else {
+    panic("invalid AgentColor!")
+  }
+}
+
 func (ac AgentColor) marble() Marble {
   return Marble(ac)
 }

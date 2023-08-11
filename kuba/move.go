@@ -1,5 +1,7 @@
 package kuba
 
+import "encoding/json"
+
 type Direction int
 const (
   DirNil Direction = iota
@@ -8,6 +10,20 @@ const (
   DirRight
   DirLeft
 )
+
+func (d Direction) String() string {
+  if d == DirUp {
+    return "UP"
+  } else if d == DirDown {
+    return "DOWN"
+  } else if d == DirRight {
+    return "RIGHT"
+  } else if d == DirLeft {
+    return "LEFT"
+  } else {
+    panic("invalid direction!")
+  }
+}
 
 func (d Direction) dx() int {
   if d == DirUp || d == DirDown {
@@ -80,10 +96,39 @@ func directionFromDxDy(dx, dy int) (bool, Direction) {
   }
 }
 
-type lastMoveT struct {
+func (m Move) MarshalJSON() ([]byte, error) {
+  type publicMove struct {
+    X int `json:"x"`
+    Y int `json:"y"`
+    D string `json:"d"`
+  }
+
+  return json.Marshal(publicMove{
+    X: m.x,
+    Y: m.y,
+    D: m.d.String(),
+  })
+}
+
+type LastMoveT struct {
   x int
   y int
   d Direction
   length int
 }
 
+func (m LastMoveT) MarshalJSON() ([]byte, error) {
+  type publicLastMoveT struct {
+    X int `json:"x"`
+    Y int `json:"y"`
+    D string `json:"d"`
+    Length int `json:"length"`
+  }
+
+  return json.Marshal(publicLastMoveT{
+    X: m.x,
+    Y: m.y,
+    D: m.d.String(),
+    Length: m.length,
+  })
+}

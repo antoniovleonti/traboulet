@@ -148,7 +148,7 @@ func TestExecuteMove(t *testing.T) {
 
     for idx, testCase := range moves {
       time.Sleep(testCase.sleep)
-      if ok, _ := kuba.ExecuteMove(testCase.move); ok != testCase.valid {
+      if ok := kuba.ExecuteMove(testCase.move); ok != testCase.valid {
         t.Errorf("moves[%d]: expected valid == %t, got %t",
                  idx, testCase.valid, ok)
       }
@@ -234,12 +234,27 @@ func TestGetStatus(t *testing.T) {
     test.kuba.agents[agentBlack] = &agent{
       score: test.overrideBlackScore,
     }
-    if actual := test.kuba.getStatus(); actual != test.status {
+    if actual := test.kuba.updateStatus(); actual != test.status {
       t.Errorf("testCases[%d]: status %d != %d", idx, actual, test.status)
     }
   }
 }
 
-func TestTimedTurns(t *testing.T) {
-  
+func TestResign(t *testing.T) {
+  for _, c := range []AgentColor{agentWhite, agentBlack} {
+    kuba := newKubaGame(0 * time.Second)
+    if !kuba.resign(c) {
+      t.Error("couldn't resign")
+    }
+    var expectedStatus Status
+    if c == agentWhite {
+      expectedStatus = statusBlackWon
+    } else {
+      expectedStatus = statusWhiteWon
+    }
+
+    if kuba.status != expectedStatus {
+      t.Error("resigning did not yield expected status")
+    }
+  }
 }
