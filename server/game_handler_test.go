@@ -107,3 +107,35 @@ func TestPostInvalidMove(t *testing.T) {
     t.Errorf("returned body: %s\n", rr.Body.String())
 	}
 }
+
+func TestPostMoveNoCookie(t *testing.T) {
+  gh := newGameHandler("", 0 * time.Second, "white", "black")
+  if gh == nil {
+    t.Error("game handler is nil")
+  }
+
+  // Create the body
+  move := kuba.Move{ X: 0, Y: 0, D: kuba.DirRight }
+  b, err := json.Marshal(move)
+  if err != nil {
+    t.Fatal(err)
+  }
+  body := bytes.NewReader(b)
+
+  // Build request
+  req, err := http.NewRequest("POST", "/move", body)
+  if err != nil {
+    t.Fatal(err)
+  }
+
+  // Run the request through our handler
+  rr := httptest.NewRecorder()
+  gh.ServeHTTP(rr, req)
+
+  // Check the response body is what we expect.
+	if rr.Code != http.StatusUnauthorized {
+    t.Errorf("handler returned unexpected status:\ngot: %d\nexpected: %d\n",
+             rr.Code, http.StatusUnauthorized)
+    t.Errorf("returned body: %s\n", rr.Body.String())
+	}
+}
