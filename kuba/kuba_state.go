@@ -88,18 +88,18 @@ func (kg *kubaGame) ValidateMove(move Move) bool {
   }
 
   // Validate direction
-  if !move.d.isValid() {
+  if !move.D.isValid() {
     return false
   }
 
   // Check bounds
-  if !kg.isInBounds(move.x, move.y)  ||
-     !kg.isInBounds(move.x + move.dx(), move.y + move.dy()) {
+  if !kg.isInBounds(move.X, move.Y)  ||
+     !kg.isInBounds(move.X + move.dx(), move.Y + move.dy()) {
     return false
   }
 
   // Check that move is in turn
-  if kg.board[move.y][move.x] != kg.whoseTurn.marble() {
+  if kg.board[move.Y][move.X] != kg.whoseTurn.marble() {
     return false
   }
 
@@ -109,7 +109,7 @@ func (kg *kubaGame) ValidateMove(move Move) bool {
   }
 
   // Check that no piece is blocking this move from behind
-  if behindx, behindy := move.x - move.dx(), move.y - move.dy();
+  if behindx, behindy := move.X - move.dx(), move.Y - move.dy();
       kg.isInBounds(behindx, behindy) &&
       kg.board[behindy][behindx] != marbleNil {
     return false
@@ -117,7 +117,7 @@ func (kg *kubaGame) ValidateMove(move Move) bool {
 
   // Check that you are not pushing your own piece off the board
   foundEmpty := false
-  var x, y int = move.x, move.y
+  var x, y int = move.X, move.Y
   for ; kg.isInBounds(x, y); x, y = x + move.dx(), y + move.dy() {
     if kg.board[y][x] == marbleNil {
       foundEmpty = true
@@ -145,7 +145,7 @@ func (kg *kubaGame) validMoveExists() bool {
       for dx := range []int{-1, 0, 1} {
         for dy := range []int{-1, 0, 1} {
           if ok, dir := directionFromDxDy(dx, dy);
-              ok && kg.ValidateMove(Move{ x: x, y: y, d: dir }) {
+              ok && kg.ValidateMove(Move{ X: x, Y: y, D: dir }) {
             return true
           }
         }
@@ -185,7 +185,7 @@ func (kg *kubaGame) ExecuteMove(move Move) bool {
   }
 
   tmp := marbleNil
-  var x, y int = move.x, move.y
+  var x, y int = move.X, move.Y
   for ; kg.isInBounds(x, y); x, y = x + move.dx(), y + move.dy() {
     kg.board[y][x], tmp = tmp, kg.board[y][x]  // swap
     if tmp == marbleNil {
@@ -204,9 +204,9 @@ func (kg *kubaGame) ExecuteMove(move Move) bool {
   }
   if kg.board[y][x] == kg.whoseTurn.otherAgent().marble() {
     kg.ko = &Move{
-      x: x,
-      y: y,
-      d: move.d.reverse(),
+      X: x,
+      Y: y,
+      D: move.D.reverse(),
     }
   }
 

@@ -1,6 +1,9 @@
 package kuba
 
-import "encoding/json"
+import (
+  "encoding/json"
+  "errors"
+)
 
 type Direction int
 const (
@@ -10,6 +13,29 @@ const (
   DirRight
   DirLeft
 )
+
+func DirectionFromString(s string) (Direction, error) {
+  if s == DirUp.String() {
+    return DirUp, nil
+  } else if s == DirDown.String() {
+    return DirDown, nil
+  } else if s == DirRight.String() {
+    return DirRight, nil
+  } else if s == DirLeft.String() {
+    return DirLeft, nil
+  } else {
+    return DirNil, errors.New("invalid direction!")
+  }
+}
+
+func (d *Direction) UnmarshalJSON(raw []byte) error {
+  if string(raw) == "" {
+    return errors.New("Direction cannot be empty.")
+  }
+  tmp, err := DirectionFromString(string(raw))
+  *d = tmp
+  return err
+}
 
 func (d Direction) String() string {
   if d == DirUp {
@@ -68,17 +94,29 @@ func (d Direction) reverse() Direction {
 }
 
 type Move struct {
-  x int
-  y int
-  d Direction
+  X int `json:"x"`
+  Y int `json:"y"`
+  D Direction `json:"d,string"`
+}
+
+func (m Move) MarshalJSON() ([]byte, error) {
+  return json.Marshal(struct{
+    X int
+    Y int
+    D string
+  }{
+    X: m.X,
+    Y: m.Y,
+    D: m.D.String(),
+  })
 }
 
 func (m Move) dx() int {
-  return m.d.dx()
+  return m.D.dx()
 }
 
 func (m Move) dy() int {
-  return m.d.dy()
+  return m.D.dy()
 }
 
 
@@ -94,20 +132,6 @@ func directionFromDxDy(dx, dy int) (bool, Direction) {
   } else {
     return false, DirNil
   }
-}
-
-func (m Move) MarshalJSON() ([]byte, error) {
-  type publicMove struct {
-    X int `json:"x"`
-    Y int `json:"y"`
-    D string `json:"d"`
-  }
-
-  return json.Marshal(publicMove{
-    X: m.x,
-    Y: m.y,
-    D: m.d.String(),
-  })
 }
 
 type LastMoveT struct {

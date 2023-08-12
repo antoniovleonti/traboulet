@@ -76,21 +76,21 @@ func TestValidateMove(t *testing.T) {
   }
 
   validCases := []Move{
-    Move{ y: 1, x: 0, d: DirRight },
-    Move{ y: 2, x: 0, d: DirRight },
-    Move{ y: 3, x: 0, d: DirRight },
-    Move{ y: 3, x: 0, d: DirRight },
-    Move{ y: 6, x: 0, d: DirRight },
+    Move{ Y: 1, X: 0, D: DirRight },
+    Move{ Y: 2, X: 0, D: DirRight },
+    Move{ Y: 3, X: 0, D: DirRight },
+    Move{ Y: 3, X: 0, D: DirRight },
+    Move{ Y: 6, X: 0, D: DirRight },
   }
 
   invalidCases := []Move{
-    Move{ y: 0, x: 0, d: DirRight }, // Kills own marble
-    Move{ y: 5, x: 0, d: DirRight }, // Wrong color marble
-    Move{ y: 1, x: 1, d: DirRight }, // Blocked from behind
-    Move{ y: 6, x: 0, d: DirLeft }, // Kills own marble
-    Move{ y: 0, x: 0, d: DirDown }, // Kills own marble
-    Move{ y: 0, x: 0, d: DirNil }, // Nonsense dx, dy
-    Move{ y: 0, x: 0, d: Direction(8)}, // Nonsense dx, dy
+    Move{ Y: 0, X: 0, D: DirRight }, // Kills own marble
+    Move{ Y: 5, X: 0, D: DirRight }, // Wrong color marble
+    Move{ Y: 1, X: 1, D: DirRight }, // Blocked from behind
+    Move{ Y: 6, X: 0, D: DirLeft }, // Kills own marble
+    Move{ Y: 0, X: 0, D: DirDown }, // Kills own marble
+    Move{ Y: 0, X: 0, D: DirNil }, // Nonsense dx, dy
+    Move{ Y: 0, X: 0, D: Direction(8)}, // Nonsense dx, dy
   }
 
   for idx, valid := range validCases {
@@ -116,28 +116,28 @@ func TestExecuteMove(t *testing.T) {
   }
 
   runOutOfTime := []moveTest{
-    { move: Move{ x: 0, y: 0, d: DirRight },
+    { move: Move{ X: 0, Y: 0, D: DirRight },
       valid: true, score: false, sleep: 50 * time.Millisecond },
-    { move: Move{ x: 6, y: 0, d: DirLeft },
+    { move: Move{ X: 6, Y: 0, D: DirLeft },
       valid: true, score: false, sleep: 50 * time.Millisecond },
-    { move: Move{ x: 1, y: 0, d: DirRight },
+    { move: Move{ X: 1, Y: 0, D: DirRight },
       valid: true, score: false, sleep: 50 * time.Millisecond },
-    { move: Move{ x: 5, y: 0, d: DirLeft },
+    { move: Move{ X: 5, Y: 0, D: DirLeft },
       valid: true, score: false, sleep: 50 * time.Millisecond },
     // ko rule
-    { move: Move{ x: 1, y: 0, d: DirRight },
+    { move: Move{ X: 1, Y: 0, D: DirRight },
       valid: false, score: false, sleep: 50 * time.Millisecond },
     // out of turn
-    { move: Move{ x: 4, y: 0, d: DirLeft },
+    { move: Move{ X: 4, Y: 0, D: DirLeft },
       valid: false, score: false, sleep: 50 * time.Millisecond },
-    { move: Move{ x: 1, y: 0, d: DirDown },
+    { move: Move{ X: 1, Y: 0, D: DirDown },
       valid: true, score: false, sleep: 50 * time.Millisecond },
-    { move: Move{ x: 3, y: 0, d: DirDown },
+    { move: Move{ X: 3, Y: 0, D: DirDown },
       valid: true, score: false, sleep: 50 * time.Millisecond },
-    { move: Move{ x: 0, y: 1, d: DirRight },
+    { move: Move{ X: 0, Y: 1, D: DirRight },
       valid: true, score: false, sleep: 50 * time.Millisecond },
     // timeout
-    { move: Move{ x: 3, y: 1, d: DirDown },
+    { move: Move{ X: 3, Y: 1, D: DirDown },
       valid: false, score: false, sleep: 450 * time.Millisecond },
   }
 

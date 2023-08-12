@@ -45,15 +45,15 @@ func TestTryMove(t *testing.T) {
     valid bool
   }
   testCases := []testCase{
-    testCase{ m: Move{ x: 0, y: 0, d: DirDown }, a: agentWhite, valid: true },
-    testCase{ m: Move{ x: 0, y: 0, d: DirDown }, a: agentWhite, valid: false },
-    testCase{ m: Move{ x: 0, y: 1, d: DirDown }, a: agentWhite, valid: false },
-    testCase{ m: Move{ x: 6, y: 0, d: DirDown }, a: agentBlack, valid: true },
-    testCase{ m: Move{ x: 0, y: 1, d: DirDown }, a: agentWhite, valid: true },
+    testCase{ m: Move{ X: 0, Y: 0, D: DirDown }, a: agentWhite, valid: true },
+    testCase{ m: Move{ X: 0, Y: 0, D: DirDown }, a: agentWhite, valid: false },
+    testCase{ m: Move{ X: 0, Y: 1, D: DirDown }, a: agentWhite, valid: false },
+    testCase{ m: Move{ X: 6, Y: 0, D: DirDown }, a: agentBlack, valid: true },
+    testCase{ m: Move{ X: 0, Y: 1, D: DirDown }, a: agentWhite, valid: true },
   }
   for idx, tc := range testCases {
-    actual := km.tryMove(tc.m, km.colorToUser[tc.a].cookie)
-    if actual != tc.valid {
+    actual := km.TryMove(tc.m, km.colorToUser[tc.a].cookie)
+    if (actual ==  nil) != tc.valid {
       t.Errorf("testCases[%d]: expected %t, got %t\n", idx, tc.valid, actual)
     }
   }

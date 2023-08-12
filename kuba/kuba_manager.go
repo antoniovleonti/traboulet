@@ -1,6 +1,7 @@
 package kuba
 
 import (
+  "errors"
 	"net/http"
 	"crypto/rand"
   "encoding/base64"
@@ -34,7 +35,7 @@ type ClientView struct {
 type KubaManager struct {
   state *kubaGame
   asyncCh chan struct{}
-  cookieToUser map[*http.Cookie]*User
+  cookieToUser map[string]*User
   colorToUser map[AgentColor]*User
   path string
 }
@@ -44,7 +45,7 @@ func NewKubaManager(path string, t time.Duration, idWhite, idBlack string) (
   km := &KubaManager {
     state: newKubaGame(t),
     asyncCh: make(chan struct{}),
-    cookieToUser: make(map[*http.Cookie]*User),
+    cookieToUser: make(map[string]*User),
     colorToUser: make(map[AgentColor]*User),
     path: path,
   }
@@ -62,6 +63,15 @@ func (km *KubaManager) newCookie(id string) *http.Cookie {
   return c
 }
 
+// For tests
+func (km *KubaManager) GetWhiteCookie() *http.Cookie {
+  return km.colorToUser[agentWhite].cookie
+}
+
+func (km *KubaManager) GetBlackCookie() *http.Cookie {
+  return km.colorToUser[agentBlack].cookie
+}
+
 func getRandBase64String(length int) string {
   randomBytes := make([]byte, length)
   _, err := rand.Read(randomBytes)
@@ -77,20 +87,27 @@ func (km *KubaManager) setUser(color AgentColor, id string) bool {
     cookie: km.newCookie(id),
     color: color,
   }
-  km.cookieToUser[u.cookie] = &u
+  km.cookieToUser[u.cookie.Value] = &u
   km.colorToUser[color] = &u
   return true
 }
 
-func (km *KubaManager) tryMove(m Move, c *http.Cookie) bool {
-  if user, ok := km.cookieToUser[c]; !ok || user.color != km.state.whoseTurn {
-    return false
+func (km *KubaManager) TryMove(m Move, c *http.Cookie) error {
+  user, ok := km.cookieToUser[c.Value]
+  if !ok {
+    return errors.New("Cookie not found.")
   }
-  return km.state.ExecuteMove(m)
+  if user.color != km.state.whoseTurn {
+    return errors.New("It is not your turn.")
+  }
+  if !km.state.ExecuteMove(m) {
+    return errors.New("Move was invalid.")
+  }
+  return nil
 }
 
 func (km *KubaManager) tryResign(c *http.Cookie) bool {
-  user, ok := km.cookieToUser[c]
+  user, ok := km.cookieToUser[c.Value]
   if !ok {
     return false
   }

@@ -26,7 +26,8 @@ func newGameHandler(path string, t time.Duration, idWhite, idBlack string) (
     statePublisher: publisher{},
     path: path,
   }
-  gh.router.GET("/state", gh.state)
+  gh.router.GET("/state", gh.getState)
+  gh.router.POST("/move", gh.postMove)
 
   return &gh
 }
@@ -36,8 +37,32 @@ func (gh *gameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   gh.router.ServeHTTP(w, r)
 }
 
-func (gh *gameHandler) state(w http.ResponseWriter, r *http.Request,
+func (gh *gameHandler) getState(w http.ResponseWriter, r *http.Request,
                              p httprouter.Params) {
   w.Header().Set("Content-Type", "application/json")
   json.NewEncoder(w).Encode(gh.km)
 }
+
+func (gh *gameHandler) postMove(w http.ResponseWriter, r *http.Request,
+                                p httprouter.Params) {
+  // Parse body.
+  var move kuba.Move
+  err := json.NewDecoder(r.Body).Decode(&move)
+  if err != nil {
+    http.Error(w, "Could not parse move: " + err.Error(), http.StatusBadRequest)
+    return
+  }
+
+  c := r.Cookies()
+  if len(c) == 0 {
+    http.Error(w, "No cookies provided.", http.StatusUnauthorized)
+    return
+  }
+
+  if err = gh.km.TryMove(move, c[0]); err != nil {
+    http.Error(w, "Could not execute move: " + err.Error(),
+               http.StatusBadRequest)
+    return
+  }
+}
+
