@@ -1,78 +1,110 @@
 package kuba
 
 import (
-  "reflect"
-  "encoding/json"
-  "testing"
-  "time"
-  // "fmt"
+	"encoding/json"
+	"net/http"
+	"reflect"
+	"testing"
+	"time"
+	// "fmt"
 )
 
-func TestGetRandBase64String(t *testing.T) {
-  if len(getRandBase64String(32)) != 32 {
-    t.Error("length did not match expectation")
-  }
+func fakeWhiteCookie() *http.Cookie {
+	c := http.Cookie{
+		Name:  "white",
+		Value: "1234",
+		Path:  "/",
+	}
+	return &c
+}
+
+func fakeBlackCookie() *http.Cookie {
+	c := http.Cookie{
+		Name:  "black",
+		Value: "5678",
+		Path:  "/",
+	}
+	return &c
 }
 
 func TestNewKubaManager(t *testing.T) {
-  path := "testpath"
-  km := NewKubaManager(path, 0 * time.Second, "white", "black")
+	km := NewKubaManager(Config{}, fakeWhiteCookie(), fakeBlackCookie(), nil)
 
-  if len(km.cookieToUser) != 2 {
-    t.Error("num users did not match expectation")
-  }
+	if len(km.cookieToUser) != 2 {
+		t.Error("num users did not match expectation")
+	}
 
-  if km.path != path {
-    t.Error("path did not match")
-  }
+	used := make(map[AgentColor]bool)
+	for _, v := range km.cookieToUser {
+		used[v.color] = true
+	}
 
-  used := make(map[AgentColor]bool)
-  for _, v := range km.cookieToUser {
-    used[v.color] = true
-  }
-
-  if !(used[agentWhite] && used[agentBlack]) {
-    t.Error("did not assign players to both colors!")
-  }
+	if !(used[agentWhite] && used[agentBlack]) {
+		t.Error("did not assign players to both colors!")
+	}
 }
 
 func TestTryMove(t *testing.T) {
-  km := NewKubaManager("path", 0 * time.Second, "white", "black")
+	km := NewKubaManager(
+		Config{}, fakeWhiteCookie(), fakeBlackCookie(), nil)
 
-  type testCase struct {
-    m Move
-    a AgentColor
-    valid bool
-  }
-  testCases := []testCase{
-    testCase{ m: Move{ X: 0, Y: 0, D: DirDown }, a: agentWhite, valid: true },
-    testCase{ m: Move{ X: 0, Y: 0, D: DirDown }, a: agentWhite, valid: false },
-    testCase{ m: Move{ X: 0, Y: 1, D: DirDown }, a: agentWhite, valid: false },
-    testCase{ m: Move{ X: 6, Y: 0, D: DirDown }, a: agentBlack, valid: true },
-    testCase{ m: Move{ X: 0, Y: 1, D: DirDown }, a: agentWhite, valid: true },
-  }
-  for idx, tc := range testCases {
-    actual := km.TryMove(tc.m, km.colorToUser[tc.a].cookie)
-    if (actual ==  nil) != tc.valid {
-      t.Errorf("testCases[%d]: expected %t, got %t\n", idx, tc.valid, actual)
-    }
-  }
+	type testCase struct {
+		m     Move
+		a     AgentColor
+		valid bool
+	}
+	testCases := []testCase{
+		testCase{m: Move{X: 0, Y: 0, D: DirDown}, a: agentWhite, valid: true},
+		testCase{m: Move{X: 0, Y: 0, D: DirDown}, a: agentWhite, valid: false},
+		testCase{m: Move{X: 0, Y: 1, D: DirDown}, a: agentWhite, valid: false},
+		testCase{m: Move{X: 6, Y: 0, D: DirDown}, a: agentBlack, valid: true},
+		testCase{m: Move{X: 0, Y: 1, D: DirDown}, a: agentWhite, valid: true},
+	}
+	for idx, tc := range testCases {
+		actual := km.TryMove(tc.m, km.colorToUser[tc.a].cookie)
+		if (actual == nil) != tc.valid {
+			t.Errorf("testCases[%d]: expected %t, got %t\n", idx, tc.valid, actual)
+		}
+	}
 }
 
 func TestMarshalJSON(t *testing.T) {
-  km := NewKubaManager("path", 600 * time.Second, "white", "black")
-  b, err := json.Marshal(km)
-  if err != nil {
-    t.Errorf("marshal json error: %s", err.Error())
-  }
-  var actual ClientView
-  err = json.Unmarshal(b, &actual)
-  if err != nil {
-    t.Fatal(err)
-  }
-  expected := km.GetClientView()
+	km := NewKubaManager(
+		Config{InitialTime: 600 * time.Second}, fakeWhiteCookie(),
+		fakeBlackCookie(), nil)
+	b, err := json.Marshal(km)
+	if err != nil {
+		t.Errorf("marshal json error: %s", err.Error())
+	}
+	var actual ClientView
+	err = json.Unmarshal(b, &actual)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := km.GetClientView()
 	if !reflect.DeepEqual(actual, expected) {
-    t.Errorf("handler returned unexpected body:\ngot: %v\nexpected: %v\n",
-             actual, expected)
+		t.Errorf("handler returned unexpected body:\ngot: %v\nexpected: %v\n",
+			actual, expected)
+	}
+}
+
+func TestTryResign(t *testing.T) {
+	km := NewKubaManager(
+		Config{InitialTime: 600 * time.Second}, fakeWhiteCookie(),
+		fakeBlackCookie(), nil)
+	if km == nil {
+		t.Error("manager is nil")
+	}
+
+	if !km.TryResign(km.GetWhiteCookie()) {
+		t.Error("couldn't resign with white player")
+	}
+	if km.state.status != statusBlackWon {
+		t.Errorf("unexpected status; expected %d, got %d",
+			statusBlackWon, km.state.status)
+	}
+
+	if km.TryResign(km.GetBlackCookie()) {
+		t.Error("Was able to resign with black after game was already over!")
 	}
 }
