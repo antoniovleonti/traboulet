@@ -160,3 +160,28 @@ func TestHandleGameRequestForwarding(t *testing.T) {
 		t.Error("callback was not called")
 	}
 }
+
+func TestGetGames(t *testing.T) {
+	mm := newMatchmaker()
+
+	mm.challenges["a"] =
+		newChallengeHandler(fakeWhiteCookie(), kuba.Config{}, nil)
+	mm.challenges["b"] = newChallengeHandler(
+		fakeWhiteCookie(), kuba.Config{InitialTime: 1 * time.Minute}, nil)
+	mm.challenges["c"] = newChallengeHandler(
+		fakeWhiteCookie(), kuba.Config{InitialTime: 1 * time.Hour}, nil)
+
+	req, err := http.NewRequest("GET", "/games", nil)
+	if err != nil {
+		t.Error(err)
+	}
+	rr := httptest.NewRecorder()
+
+	mm.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf(
+			"unexpected response status %d; expected %d",
+			rr.Code, http.StatusOK)
+	}
+}

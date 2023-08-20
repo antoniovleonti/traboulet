@@ -39,6 +39,7 @@ func newMatchmaker() *matchmaker {
 	}
 
 	mm.router.POST("/games", mm.postGame)
+	mm.router.GET("/games", mm.getChallenges)
 
 	mm.router.GET("/games/:id/*etc", mm.forwardGameRequest)
 	mm.router.POST("/games/:id/*etc", mm.forwardGameRequest)
@@ -109,6 +110,17 @@ func (mm *matchmaker) postGame(
 	w.Header().Add("Location", "/games/"+path)
 	w.WriteHeader(http.StatusSeeOther)
 	w.Write([]byte("success"))
+}
+
+func (mm *matchmaker) getChallenges(
+	w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	b, err := json.Marshal(mm.challenges)
+	if err != nil {
+		http.Error(
+			w, "could not marshal challenges: "+err.Error(),
+			http.StatusInternalServerError)
+	}
+	w.Write(b)
 }
 
 func (mm *matchmaker) moveChallengeToGame(

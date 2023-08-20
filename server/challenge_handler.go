@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"github.com/julienschmidt/httprouter"
 	"kuba"
 	"net/http"
@@ -22,6 +23,10 @@ type challengeHandler struct {
 	acceptCb challengeAcceptedCb
 	accepted bool
 	mutex    sync.Mutex
+}
+
+type challengeHandlerView struct {
+	Config kuba.Config
 }
 
 func newChallengeHandler(
@@ -79,4 +84,10 @@ func (ch *challengeHandler) postJoin(
 		ch.acceptCb(&ch.pub, ch.config, ch.creator, c)
 	}
 	ch.accepted = true
+}
+
+func (ch *challengeHandler) MarshalJSON() ([]byte, error) {
+	return json.Marshal(challengeHandlerView{
+		Config: ch.config,
+	})
 }
