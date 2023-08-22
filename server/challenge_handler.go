@@ -13,16 +13,16 @@ import (
 // refresh or whatever-- details of what is communicated to the client is kind
 // of none of this file's business), and probably dispose of this handler.
 type challengeAcceptedCb func(
-	*publisher, kuba.Config, *http.Cookie, *http.Cookie)
+	kuba.Config, *http.Cookie, *http.Cookie) (string, error)
 
 type challengeHandler struct {
-	router   *httprouter.Router
-	creator  *http.Cookie
-	config   kuba.Config
-	pub      publisher
-	acceptCb challengeAcceptedCb
-	accepted bool
-	mutex    sync.Mutex
+	router              *httprouter.Router
+	creator             *http.Cookie
+	config              kuba.Config
+	pub                 publisher
+	onChallengeAccepted challengeAcceptedCb
+	accepted            bool
+	mutex               sync.Mutex
 }
 
 type challengeHandlerView struct {
@@ -31,16 +31,17 @@ type challengeHandlerView struct {
 
 func newChallengeHandler(
 	c *http.Cookie, config kuba.Config,
-	acceptCb challengeAcceptedCb) *challengeHandler {
+	onChallengeAccepted challengeAcceptedCb) *challengeHandler {
 	ch := challengeHandler{
-		router:   httprouter.New(),
-		creator:  c,
-		config:   config,
-		pub:      publisher{},
-		acceptCb: acceptCb,
-		accepted: false,
+		router:              httprouter.New(),
+		creator:             c,
+		config:              config,
+		pub:                 publisher{},
+		onChallengeAccepted: onChallengeAccepted,
+		accepted:            false,
 	}
 
+	ch.router.GET("/", ch.getChallenge)
 	ch.router.GET("/update", ch.getUpdate)
 	ch.router.POST("/join", ch.postJoin)
 
@@ -49,6 +50,17 @@ func newChallengeHandler(
 
 func (ch *challengeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ch.router.ServeHTTP(w, r)
+}
+
+func (ch *challengeHandler) getChallenge(
+	w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	b, err := json.Marshal(ch)
+	if err != nil {
+		http.Error(w, "could not generate json: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+	w.Write(b)
 }
 
 func (ch *challengeHandler) getUpdate(
@@ -79,11 +91,32 @@ func (ch *challengeHandler) postJoin(
 		return
 	}
 
-	w.Write([]byte("success"))
-	if ch.acceptCb != nil {
-		ch.acceptCb(&ch.pub, ch.config, ch.creator, c)
+	if ch.onChallengeAccepted == nil {
+		http.Error(
+			w, "Challenge could be accepted, but no callback to do so was provided.",
+			http.StatusInternalServerError)
+		return
 	}
+
+	gamePath, err := ch.onChallengeAccepted(ch.config, ch.creator, c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	ch.accepted = true
+
+	w.Header().Add("Location", gamePath)
+	w.WriteHeader(http.StatusSeeOther)
+	w.Write([]byte("Success; check header Location field for game path."))
+
+	// Notify subscribers of new game
+	ch.pub.do(func(w http.ResponseWriter) {
+		w.Header().Add("Location", gamePath)
+		w.WriteHeader(http.StatusSeeOther)
+		w.Write([]byte(
+			"Game has started; check header Location field for game path."))
+	})
 }
 
 func (ch *challengeHandler) MarshalJSON() ([]byte, error) {
