@@ -1,9 +1,9 @@
 package server
 
 import (
-  "math/rand"
-  "time"
-  "encoding/base32"
+	"encoding/base32"
+	"math/rand"
+	"time"
 )
 
 type pathGenerator rand.Rand

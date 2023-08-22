@@ -15,7 +15,6 @@ func TestNewMatchmaker(t *testing.T) {
 	}
 }
 
-
 func TestServeHTTPSetsCookie(t *testing.T) {
 	mm := newMatchmaker()
 
@@ -30,4 +29,3 @@ func TestServeHTTPSetsCookie(t *testing.T) {
 		t.Error("cookie was not set")
 	}
 }
-

@@ -2,11 +2,10 @@ package server
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
-  "encoding/base64"
 )
-
 
 type multigameHandler struct {
 	router     *httprouter.Router
@@ -22,7 +21,6 @@ func newMatchmaker() *multigameHandler {
 		games:      make(map[string]*gameHandler),
 		pathGen:    newPathGenerator(),
 	}
-
 
 	return &mm
 }
