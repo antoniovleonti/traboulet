@@ -38,8 +38,8 @@ type KubaManager struct {
 }
 
 func NewKubaManager(
-  config Config, white, black *http.Cookie, onAsyncUpdate func(),
-  onGameOver func()) *KubaManager {
+	config Config, white, black *http.Cookie, onAsyncUpdate func(),
+	onGameOver func()) *KubaManager {
 	if white == nil {
 		return nil
 	}
@@ -47,7 +47,8 @@ func NewKubaManager(
 		return nil
 	}
 	km := &KubaManager{
-		state:        newKubaGame(config, onAsyncUpdate, onGameOver),
+		state: newKubaGame(
+			config, onAsyncUpdate, onGameOver, 30*time.Second),
 		cookieToUser: make(map[string]*User),
 		colorToUser:  make(map[AgentColor]*User),
 	}

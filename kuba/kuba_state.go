@@ -14,6 +14,7 @@ const (
 	statusWhiteWon
 	statusBlackWon
 	statusDraw
+	statusAborted
 )
 
 func (s Status) String() string {
@@ -40,13 +41,16 @@ type kubaGame struct {
 	status            Status
 	clockEnabled      bool
 	posToCount        map[string]int // string rep of pos -> # of times it's occured.
+	firstMoveDeadline *time.Time
+	firstMoveTimer    *time.Timer
 	mutex             sync.RWMutex
-	onAsyncUpdate func()
-  onGameOver func()
+	onAsyncUpdate     func()
+	onGameOver        func()
 }
 
 func newKubaGame(
-  config Config, onAsyncUpdate func(), onGameOver func()) *kubaGame {
+	config Config, onAsyncUpdate func(), onGameOver func(),
+	firstMoveTimeout time.Duration) *kubaGame {
 	var x, R, B, W Marble = marbleNil, marbleRed, marbleBlack, marbleWhite
 	startPosition := [][]Marble{
 		{W, W, x, x, x, B, B},
@@ -68,16 +72,23 @@ func newKubaGame(
 		time:  config.InitialTime,
 	}
 
-	return &kubaGame{
+	firstMoveDeadline := time.Now().Add(firstMoveTimeout)
+
+	kg := kubaGame{
 		agents:            agents,
 		board:             startPosition,
 		whoseTurn:         agentWhite,
 		winThreshold:      7,
 		clockEnabled:      config.InitialTime > 0*time.Second,
 		posToCount:        make(map[string]int),
-		onAsyncUpdate: onAsyncUpdate,
-    onGameOver: onGameOver,
+		firstMoveDeadline: &firstMoveDeadline,
+		onAsyncUpdate:     onAsyncUpdate,
+		onGameOver:        onGameOver,
 	}
+	kg.firstMoveTimer =
+		time.AfterFunc(firstMoveTimeout, kg.firstMoveTimeoutCallback)
+
+	return &kg
 }
 
 func (kg *kubaGame) boardSize() int {
@@ -120,8 +131,7 @@ func (kg *kubaGame) ValidateMove(move Move) bool {
 	}
 
 	// Check that no piece is blocking this move from behind
-	if behindx, behindy := move.X-move.dx(), move.Y-move.dy(); kg.isInBounds(behindx, behindy) &&
-		kg.board[behindy][behindx] != marbleNil {
+	if behindx, behindy := move.X-move.dx(), move.Y-move.dy(); kg.isInBounds(behindx, behindy) && kg.board[behindy][behindx] != marbleNil {
 		return false
 	}
 
@@ -224,8 +234,15 @@ func (kg *kubaGame) ExecuteMove(move Move) bool {
 		}
 	}
 
+	if kg.firstMoveTimer != nil {
+		if !kg.firstMoveTimer.Stop() {
+			panic("Ending first move timer failed!")
+		}
+		kg.firstMoveTimer = nil
+	}
+
 	if kg.clockEnabled && !kg.agents[kg.whoseTurn].endTurn() {
-		panic("end turn failed!")
+		panic("End player turn failed!")
 	}
 
 	kg.lastMove = &LastMoveT{
@@ -241,13 +258,13 @@ func (kg *kubaGame) ExecuteMove(move Move) bool {
 
 	kg.status = kg.updateStatus()
 	if kg.status == statusOngoing {
-    if kg.clockEnabled &&
-      !kg.agents[kg.whoseTurn].startTurn(kg.playerTimeoutCallback) {
+		if kg.clockEnabled &&
+			!kg.agents[kg.whoseTurn].startTurn(kg.playerTimeoutCallback) {
 			panic("startTurn failed!")
 		}
 	} else if kg.onGameOver != nil {
-    kg.onGameOver()
-  }
+		kg.onGameOver()
+	}
 
 	return true
 }
@@ -263,9 +280,25 @@ func (kg *kubaGame) playerTimeoutCallback() {
 	if kg.onAsyncUpdate != nil {
 		kg.onAsyncUpdate()
 	}
-  if kg.onGameOver != nil {
-    kg.onGameOver()
-  }
+	if kg.onGameOver != nil {
+		kg.onGameOver()
+	}
+}
+
+func (kg *kubaGame) firstMoveTimeoutCallback() {
+	kg.mutex.Lock()
+	defer kg.mutex.Unlock()
+
+	// The other team just won
+	kg.status = statusAborted
+
+	// Notify front-end of update
+	if kg.onAsyncUpdate != nil {
+		kg.onAsyncUpdate()
+	}
+	if kg.onGameOver != nil {
+		kg.onGameOver()
+	}
 }
 
 func (kg *kubaGame) resign(agent AgentColor) bool {
@@ -277,8 +310,8 @@ func (kg *kubaGame) resign(agent AgentColor) bool {
 	}
 	kg.status = agent.otherAgent().winStatus()
 
-  if kg.onGameOver != nil {
-    kg.onGameOver()
-  }
+	if kg.onGameOver != nil {
+		kg.onGameOver()
+	}
 	return true
 }
