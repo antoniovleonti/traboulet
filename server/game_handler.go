@@ -18,12 +18,14 @@ type gameHandler struct {
 }
 
 func newGameHandler(
-	config kuba.Config, white, black *http.Cookie) *gameHandler {
+	config kuba.Config, white, black *http.Cookie,
+  onGameOver func()) *gameHandler {
 	gh := gameHandler{
 		router: httprouter.New(),
 		pub:    publisher{},
 	}
-	gh.km = kuba.NewKubaManager(config, white, black, gh.publishUpdate)
+	gh.km =
+    kuba.NewKubaManager(config, white, black, gh.publishUpdate, onGameOver)
 
 	gh.router.GET("/state", gh.getState)
 	gh.router.GET("/update", gh.getGameUpdate)

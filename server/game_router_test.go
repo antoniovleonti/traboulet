@@ -30,7 +30,7 @@ func TestHandleGameRequestForwarding(t *testing.T) {
 	gr := newGameRouter("/")
 
 	gr.games["testpath"] =
-		newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie())
+		newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie(), nil)
 
 	// This should trigger the above callback
 	req, err := http.NewRequest("GET", "/testpath/state", nil)

@@ -33,14 +33,14 @@ func TestNewGameHandler(t *testing.T) {
 	// Make sure gameHandler implements the http.Handler interface
 	var _ http.Handler = (*gameHandler)(nil)
 
-	gh := newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie())
+	gh := newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie(), nil)
 	if gh == nil {
 		t.Error("game handler is nil")
 	}
 }
 
 func TestGetState(t *testing.T) {
-	gh := newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie())
+	gh := newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie(), nil)
 	if gh == nil {
 		t.Error("game handler is nil")
 	}
@@ -114,7 +114,7 @@ func postMove(t *testing.T, gh *gameHandler, body []byte,
 }
 
 func TestPostValidMove(t *testing.T) {
-	gh := newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie())
+	gh := newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie(), nil)
 	if gh == nil {
 		t.Error("game handler is nil")
 	}
@@ -130,7 +130,7 @@ func TestPostValidMove(t *testing.T) {
 }
 
 func TestPostInvalidMove(t *testing.T) {
-	gh := newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie())
+	gh := newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie(), nil)
 	if gh == nil {
 		t.Error("game handler is nil")
 	}
@@ -140,7 +140,7 @@ func TestPostInvalidMove(t *testing.T) {
 }
 
 func TestPostMoveNoCookie(t *testing.T) {
-	gh := newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie())
+	gh := newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie(), nil)
 	if gh == nil {
 		t.Error("game handler is nil")
 	}
@@ -156,7 +156,7 @@ func TestPostMoveNoCookie(t *testing.T) {
 }
 
 func TestPostMoveEmptyBody(t *testing.T) {
-	gh := newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie())
+	gh := newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie(), nil)
 	if gh == nil {
 		t.Error("game handler is nil")
 	}

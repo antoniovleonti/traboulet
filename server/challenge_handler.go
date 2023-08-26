@@ -6,6 +6,7 @@ import (
 	"kuba"
 	"net/http"
 	"sync"
+  "time"
 )
 
 // Assumption is that this is a function which will create a new game with
@@ -18,11 +19,12 @@ type challengeAcceptedCb func(
 type challengeHandler struct {
 	router              *httprouter.Router
 	creator             *http.Cookie
+  timestamp time.Time
 	config              kuba.Config
 	pub                 publisher
 	onChallengeAccepted challengeAcceptedCb
 	accepted            bool
-	mutex               sync.Mutex
+	mutex               sync.RWMutex
 }
 
 type challengeHandlerView struct {
@@ -34,6 +36,7 @@ func newChallengeHandler(
 	onChallengeAccepted challengeAcceptedCb) *challengeHandler {
 	ch := challengeHandler{
 		router:              httprouter.New(),
+    timestamp: time.Now(),
 		creator:             c,
 		config:              config,
 		pub:                 publisher{},
@@ -54,6 +57,9 @@ func (ch *challengeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (ch *challengeHandler) getChallenge(
 	w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+  ch.mutex.RLock()
+  defer ch.mutex.RUnlock()
+
 	b, err := json.Marshal(ch)
 	if err != nil {
 		http.Error(w, "could not generate json: "+err.Error(),

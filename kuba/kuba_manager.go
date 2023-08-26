@@ -37,8 +37,9 @@ type KubaManager struct {
 	colorToUser  map[AgentColor]*User
 }
 
-func NewKubaManager(config Config, white, black *http.Cookie,
-	notifyAsyncUpdate func()) *KubaManager {
+func NewKubaManager(
+  config Config, white, black *http.Cookie, onAsyncUpdate func(),
+  onGameOver func()) *KubaManager {
 	if white == nil {
 		return nil
 	}
@@ -46,7 +47,7 @@ func NewKubaManager(config Config, white, black *http.Cookie,
 		return nil
 	}
 	km := &KubaManager{
-		state:        newKubaGame(config, notifyAsyncUpdate),
+		state:        newKubaGame(config, onAsyncUpdate, onGameOver),
 		cookieToUser: make(map[string]*User),
 		colorToUser:  make(map[AgentColor]*User),
 	}

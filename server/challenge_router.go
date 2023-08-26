@@ -7,6 +7,8 @@ import (
 	"kuba"
 	"net/http"
 	"net/url"
+  "time"
+  "sync"
 )
 
 type createGameFnT func(kuba.Config, *http.Cookie, *http.Cookie) string
@@ -17,6 +19,7 @@ type challengeRouter struct {
 	pathGen    *pathGenerator
 	createGame createGameFnT
 	prefix     string
+  mutex sync.RWMutex
 }
 
 func newChallengeRouter(
@@ -49,8 +52,11 @@ func (cr *challengeRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (cr *challengeRouter) forwardToHandler(
 	w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+  cr.mutex.RLock()
+  defer cr.mutex.RUnlock()
+
 	id := p.ByName("id")
-	etc := p.ByName("etc")
+	etc := httprouter.CleanPath(p.ByName("etc"))
 
 	url, err := url.Parse(etc)
 	if err != nil {
@@ -82,6 +88,10 @@ func (cr *challengeRouter) postChallenge(
 		http.Error(w, "Could not parse config: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+
+  cr.mutex.Lock()
+  defer cr.mutex.Unlock()
+
 	// create challenge
 	path := cr.pathGen.newPath(8)
 	bind := func(c kuba.Config, c1, c2 *http.Cookie) (string, error) {
@@ -96,6 +106,8 @@ func (cr *challengeRouter) postChallenge(
 
 func (cr *challengeRouter) getChallenges(
 	w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+  cr.mutex.RLock()
+  defer cr.mutex.RUnlock()
 	b, err := json.Marshal(cr.challenges)
 	if err != nil {
 		http.Error(
@@ -105,6 +117,7 @@ func (cr *challengeRouter) getChallenges(
 	w.Write(b)
 }
 
+// Not thread safe-- MUST be synchronized by challenge handler
 func (cr *challengeRouter) onChallengeAccepted(
 	id string, config kuba.Config, cookie1,
 	cookie2 *http.Cookie) (string, error) {
@@ -120,4 +133,23 @@ func (cr *challengeRouter) onChallengeAccepted(
 
 	delete(cr.challenges, id)
 	return cr.createGame(config, cookie1, cookie2), nil
+}
+
+func (cr *challengeRouter) periodicallyDeleteChallengesOlderThan(
+  d time.Duration) {
+  for ;; {
+    time.Sleep(d)
+    cr.deleteChallengesOlderThan(d)
+  }
+}
+
+func (cr *challengeRouter) deleteChallengesOlderThan(d time.Duration) {
+  cr.mutex.Lock()
+  defer cr.mutex.Unlock()
+
+  for k, challenge := range cr.challenges {
+    if time.Since(challenge.timestamp) > d {
+      delete(cr.challenges, k)
+    }
+  }
 }

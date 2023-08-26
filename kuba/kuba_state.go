@@ -41,10 +41,12 @@ type kubaGame struct {
 	clockEnabled      bool
 	posToCount        map[string]int // string rep of pos -> # of times it's occured.
 	mutex             sync.RWMutex
-	notifyAsyncUpdate func()
+	onAsyncUpdate func()
+  onGameOver func()
 }
 
-func newKubaGame(config Config, notifyAsyncUpdate func()) *kubaGame {
+func newKubaGame(
+  config Config, onAsyncUpdate func(), onGameOver func()) *kubaGame {
 	var x, R, B, W Marble = marbleNil, marbleRed, marbleBlack, marbleWhite
 	startPosition := [][]Marble{
 		{W, W, x, x, x, B, B},
@@ -73,7 +75,8 @@ func newKubaGame(config Config, notifyAsyncUpdate func()) *kubaGame {
 		winThreshold:      7,
 		clockEnabled:      config.InitialTime > 0*time.Second,
 		posToCount:        make(map[string]int),
-		notifyAsyncUpdate: notifyAsyncUpdate,
+		onAsyncUpdate: onAsyncUpdate,
+    onGameOver: onGameOver,
 	}
 }
 
@@ -237,11 +240,14 @@ func (kg *kubaGame) ExecuteMove(move Move) bool {
 	kg.posToCount[kg.getPositionString()]++
 
 	kg.status = kg.updateStatus()
-	if kg.status == statusOngoing && kg.clockEnabled {
-		if !kg.agents[kg.whoseTurn].startTurn(kg.playerTimeoutCallback) {
+	if kg.status == statusOngoing {
+    if kg.clockEnabled &&
+      !kg.agents[kg.whoseTurn].startTurn(kg.playerTimeoutCallback) {
 			panic("startTurn failed!")
 		}
-	}
+	} else if kg.onGameOver != nil {
+    kg.onGameOver()
+  }
 
 	return true
 }
@@ -254,9 +260,12 @@ func (kg *kubaGame) playerTimeoutCallback() {
 	kg.status = kg.whoseTurn.otherAgent().winStatus()
 
 	// Notify front-end of update
-	if kg.notifyAsyncUpdate != nil {
-		kg.notifyAsyncUpdate()
+	if kg.onAsyncUpdate != nil {
+		kg.onAsyncUpdate()
 	}
+  if kg.onGameOver != nil {
+    kg.onGameOver()
+  }
 }
 
 func (kg *kubaGame) resign(agent AgentColor) bool {
@@ -267,5 +276,9 @@ func (kg *kubaGame) resign(agent AgentColor) bool {
 		return false
 	}
 	kg.status = agent.otherAgent().winStatus()
+
+  if kg.onGameOver != nil {
+    kg.onGameOver()
+  }
 	return true
 }

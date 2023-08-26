@@ -7,7 +7,7 @@ import (
 )
 
 func TestCreateDefaultKubaState(t *testing.T) {
-	kubaWOClock := newKubaGame(Config{}, nil)
+	kubaWOClock := newKubaGame(Config{}, nil, nil)
 	if kubaWOClock == nil {
 		t.Error("var kuba should not be nil")
 	}
@@ -16,7 +16,7 @@ func TestCreateDefaultKubaState(t *testing.T) {
 		t.Error("clock should not be enabled")
 	}
 
-	kubaWClock := newKubaGame(Config{InitialTime: 60 * time.Second}, nil)
+	kubaWClock := newKubaGame(Config{InitialTime: 60 * time.Second}, nil, nil)
 	if kubaWOClock == nil {
 		t.Error("var kuba should not be nil")
 	}
@@ -27,7 +27,7 @@ func TestCreateDefaultKubaState(t *testing.T) {
 }
 
 func TestIsInBounds(t *testing.T) {
-	kuba := newKubaGame(Config{}, nil)
+	kuba := newKubaGame(Config{}, nil, nil)
 
 	inBoundsCases := [][2]int{
 		{0, 0},
@@ -107,7 +107,7 @@ func TestValidateMove(t *testing.T) {
 }
 
 func TestExecuteMove(t *testing.T) {
-	kuba := newKubaGame(Config{InitialTime: 500 * time.Millisecond}, nil)
+	kuba := newKubaGame(Config{InitialTime: 500 * time.Millisecond}, nil, nil)
 
 	type moveTest struct {
 		move  Move
@@ -252,7 +252,11 @@ func TestGetStatus(t *testing.T) {
 
 func TestResign(t *testing.T) {
 	for _, c := range []AgentColor{agentWhite, agentBlack} {
-		kuba := newKubaGame(Config{}, nil)
+    onGameOverCalled := false
+    onGameOver := func() {
+      onGameOverCalled = true
+    }
+		kuba := newKubaGame(Config{}, nil, onGameOver)
 		if !kuba.resign(c) {
 			t.Error("couldn't resign")
 		}
@@ -266,6 +270,10 @@ func TestResign(t *testing.T) {
 		if kuba.status != expectedStatus {
 			t.Error("resigning did not yield expected status")
 		}
+
+    if !onGameOverCalled {
+      t.Error("callback was not called")
+    }
 	}
 }
 
@@ -314,7 +322,7 @@ func TestNotifyOutOfTime(t *testing.T) {
 	timeoutCb := func() {
 		done <- struct{}{}
 	}
-	kuba := newKubaGame(Config{InitialTime: 1 * time.Millisecond}, timeoutCb)
+	kuba := newKubaGame(Config{InitialTime: 1 * time.Millisecond}, timeoutCb, nil)
 	kuba.ExecuteMove(Move{X: 0, Y: 0, D: DirDown})
 	// Do nothing... wait on black to timeout
 	<-done
