@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
   "time"
+  "log"
 )
 
 type rootRouter struct {
@@ -15,7 +16,7 @@ type rootRouter struct {
 	gameRtr      *gameRouter
 }
 
-func newRootRouter() *rootRouter {
+func NewRootRouter() *rootRouter {
 	rr := rootRouter{
 		router:  httprouter.New(),
 		gameRtr: newGameRouter("/games/"),
@@ -38,6 +39,7 @@ func newRootRouter() *rootRouter {
 }
 
 func (rr *rootRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+  log.Print(r)
 	// If request has come in with no cookie, set cookie in the response.
 	if len(r.Cookies()) == 0 {
 		c := http.Cookie{

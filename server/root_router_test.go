@@ -14,14 +14,14 @@ import (
 func TestNewMatchmaker(t *testing.T) {
 	var _ http.Handler = (*rootRouter)(nil)
 
-	rr := newRootRouter()
+	rr := NewRootRouter()
 	if rr == nil {
 		t.Error("rootRouter was nil")
 	}
 }
 
 func TestServeHTTPSetsCookie(t *testing.T) {
-	rr := newRootRouter()
+	rr := NewRootRouter()
 
 	req, err := http.NewRequest("GET", "/foo/bar", nil)
 	if err != nil {
@@ -37,7 +37,7 @@ func TestServeHTTPSetsCookie(t *testing.T) {
 
 // test fwdToChallengeRouter
 func TestGetChallengesMapFromRoot(t *testing.T) {
-	rr := newRootRouter()
+	rr := NewRootRouter()
 
 	// test both with and without trailing slash
 	for _, path := range []string{"/challenges", "/challenges/"} {
@@ -56,7 +56,7 @@ func TestGetChallengesMapFromRoot(t *testing.T) {
 
 // Test full user journey from challenge to playing moves in a game.
 func TestFlowFromChallengeToPlay(t *testing.T) {
-	rr := newRootRouter()
+	rr := NewRootRouter()
 
 	// add challenge
 	b, err := json.Marshal(kuba.Config{InitialTime: 1 * time.Minute})
