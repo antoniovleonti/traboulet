@@ -131,7 +131,9 @@ func (kg *kubaGame) ValidateMove(move Move) bool {
 	}
 
 	// Check that no piece is blocking this move from behind
-	if behindx, behindy := move.X-move.dx(), move.Y-move.dy(); kg.isInBounds(behindx, behindy) && kg.board[behindy][behindx] != marbleNil {
+	behindx, behindy := move.X-move.dx(), move.Y-move.dy()
+	if kg.isInBounds(behindx, behindy) &&
+		kg.board[behindy][behindx] != marbleNil {
 		return false
 	}
 
@@ -239,6 +241,7 @@ func (kg *kubaGame) ExecuteMove(move Move) bool {
 			panic("Ending first move timer failed!")
 		}
 		kg.firstMoveTimer = nil
+		kg.firstMoveDeadline = nil
 	}
 
 	if kg.clockEnabled && !kg.agents[kg.whoseTurn].endTurn() {
@@ -262,8 +265,11 @@ func (kg *kubaGame) ExecuteMove(move Move) bool {
 			!kg.agents[kg.whoseTurn].startTurn(kg.playerTimeoutCallback) {
 			panic("startTurn failed!")
 		}
-	} else if kg.onGameOver != nil {
-		kg.onGameOver()
+	} else {
+		kg.teardown()
+		if kg.onGameOver != nil {
+			kg.onGameOver()
+		}
 	}
 
 	return true
@@ -275,6 +281,8 @@ func (kg *kubaGame) playerTimeoutCallback() {
 
 	// The other team just won
 	kg.status = kg.whoseTurn.otherAgent().winStatus()
+
+	kg.teardown()
 
 	// Notify front-end of update
 	if kg.onAsyncUpdate != nil {
@@ -291,6 +299,9 @@ func (kg *kubaGame) firstMoveTimeoutCallback() {
 
 	// The other team just won
 	kg.status = statusAborted
+	kg.firstMoveDeadline = nil
+
+	kg.teardown()
 
 	// Notify front-end of update
 	if kg.onAsyncUpdate != nil {
@@ -314,4 +325,16 @@ func (kg *kubaGame) resign(agent AgentColor) bool {
 		kg.onGameOver()
 	}
 	return true
+}
+
+// Bring the game to a completely inert state-- ensure no timers are gonna fire
+// or anything like that.
+func (kg *kubaGame) teardown() {
+	if kg.firstMoveTimer != nil {
+		kg.firstMoveTimer.Stop()
+		kg.firstMoveTimer = nil
+	}
+	for _, a := range kg.agents {
+		a.endTurn()
+	}
 }

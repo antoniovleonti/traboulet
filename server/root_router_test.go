@@ -1,12 +1,12 @@
 package server
 
 import (
-  "strings"
 	"bytes"
 	"encoding/json"
 	"kuba"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -138,7 +138,7 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-  gameID := strings.Split(gamePath, "/")[2]
+	gameID := strings.Split(gamePath, "/")[2]
 	postMoveReq.AddCookie(rr.gameRtr.games[gameID].km.GetWhiteCookie())
 	postMoveResp := httptest.NewRecorder()
 	rr.ServeHTTP(postMoveResp, postMoveReq)

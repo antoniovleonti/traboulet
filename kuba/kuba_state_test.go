@@ -326,7 +326,7 @@ func TestNotifyOutOfTime(t *testing.T) {
 	}
 	kuba := newKubaGame(
 		Config{InitialTime: 2 * time.Millisecond}, timeoutCb, nil,
-    1*time.Millisecond)
+		1*time.Millisecond)
 	kuba.ExecuteMove(Move{X: 0, Y: 0, D: DirDown})
 	// Do nothing... wait on black to timeout
 	<-done
@@ -342,12 +342,12 @@ func TestFirstMoveDeadline(t *testing.T) {
 	}
 	kuba := newKubaGame(
 		Config{InitialTime: 1 * time.Millisecond}, timeoutCb, nil,
-    1*time.Millisecond)
+		1*time.Millisecond)
 
-  // (do nothing)
+	// (do nothing)
 
-  <-done
-  if kuba.status != statusAborted {
-    t.Errorf("expected aborted status; got %d", kuba.status)
-  }
+	<-done
+	if kuba.status != statusAborted {
+		t.Errorf("expected aborted status; got %d", kuba.status)
+	}
 }

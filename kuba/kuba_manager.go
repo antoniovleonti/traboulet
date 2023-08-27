@@ -13,7 +13,7 @@ type User struct {
 }
 
 type clientViewPlayer struct {
-	TimeNs   int64      `json:"time_ns"`
+	TimeNs   int64      `json:"timeNs"`
 	Deadline *time.Time `json:"deadline,omitempty"`
 }
 
@@ -21,11 +21,11 @@ type ClientView struct {
 	Board         BoardT                      `json:"board"`
 	Status        string                      `json:"status"`
 	Ko            *Move                       `json:"ko"`
-	LastMove      *LastMoveT                  `json:"last_move"`
-	WhoseTurn     string                      `json:"whose_turn"` // color of current player
-	WinThreshold  int                         `json:"win_threshold"`
-	ClockEnabled  bool                        `json:"clock_enableed"`
-	ColorToPlayer map[string]clientViewPlayer `json:"color_to_player"`
+	LastMove      *LastMoveT                  `json:"lastMove"`
+	WhoseTurn     string                      `json:"whoseTurn"` // color of current player
+	WinThreshold  int                         `json:"winThreshold"`
+	ClockEnabled  bool                        `json:"clockEnabled"`
+	ColorToPlayer map[string]clientViewPlayer `json:"colorToPlayer"`
 }
 
 // Handles mapping cookie -> color (black / white) & ensuring players only move

@@ -11,21 +11,20 @@ import (
 // that any other games exist (accepts requests for endpoints like "/state/").
 // This allows for things like writing a single-game server for testing.
 type gameHandler struct {
-	km      *kuba.KubaManager
-	router  *httprouter.Router
-	pub     publisher
-	asyncCh chan struct{}
+	km     *kuba.KubaManager
+	router *httprouter.Router
+	pub    publisher
 }
 
 func newGameHandler(
 	config kuba.Config, white, black *http.Cookie,
-  onGameOver func()) *gameHandler {
+	onGameOver func()) *gameHandler {
 	gh := gameHandler{
 		router: httprouter.New(),
 		pub:    publisher{},
 	}
 	gh.km =
-    kuba.NewKubaManager(config, white, black, gh.publishUpdate, onGameOver)
+		kuba.NewKubaManager(config, white, black, gh.publishUpdate, onGameOver)
 
 	gh.router.GET("/state", gh.getState)
 	gh.router.GET("/update", gh.getGameUpdate)

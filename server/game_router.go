@@ -6,7 +6,7 @@ import (
 	mrand "math/rand"
 	"net/http"
 	"net/url"
-  "sync"
+	"sync"
 )
 
 type gameRouter struct {
@@ -15,7 +15,7 @@ type gameRouter struct {
 	games      map[string]*gameHandler
 	pathGen    *pathGenerator
 	prefix     string
-  mutex sync.RWMutex
+	mutex      sync.RWMutex
 }
 
 func newGameRouter(prefix string) *gameRouter {
@@ -42,8 +42,8 @@ func (gr *gameRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (gr *gameRouter) forwardToHandler(
 	w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-  gr.mutex.RLock()
-  defer gr.mutex.RUnlock()
+	gr.mutex.RLock()
+	defer gr.mutex.RUnlock()
 
 	id := p.ByName("id")
 	etc := httprouter.CleanPath(p.ByName("etc"))
@@ -66,8 +66,8 @@ func (gr *gameRouter) forwardToHandler(
 
 func (gr *gameRouter) addGame(
 	config kuba.Config, cookie1, cookie2 *http.Cookie) string {
-  gr.mutex.Lock()
-  defer gr.mutex.Unlock()
+	gr.mutex.Lock()
+	defer gr.mutex.Unlock()
 
 	// Randomize who plays white
 	if mrand.Intn(2) == 0 {
@@ -75,19 +75,19 @@ func (gr *gameRouter) addGame(
 	}
 
 	id := gr.pathGen.newPath(8)
-  onGameOver := func() {
-    gr.removeGame(id)
-  }
+	onGameOver := func() {
+		gr.removeGame(id)
+	}
 	gr.games[id] = newGameHandler(config, cookie1, cookie2, onGameOver)
 
 	return gr.prefix + id
 }
 
 func (gr *gameRouter) removeGame(id string) {
-  gr.mutex.Lock()
-  defer gr.mutex.Unlock()
+	gr.mutex.Lock()
+	defer gr.mutex.Unlock()
 
-  if _, ok := gr.games[id]; ok {
-    delete(gr.games, id)
-  }
+	if _, ok := gr.games[id]; ok {
+		delete(gr.games, id)
+	}
 }

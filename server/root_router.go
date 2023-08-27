@@ -6,8 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"net/url"
-  "time"
-  "log"
+	"time"
 )
 
 type rootRouter struct {
@@ -33,13 +32,12 @@ func NewRootRouter() *rootRouter {
 	rr.router.GET("/challenges/*etc", rr.fwdToChallengeRouter)
 	rr.router.POST("/challenges/*etc", rr.fwdToChallengeRouter)
 
-  go rr.challengeRtr.periodicallyDeleteChallengesOlderThan(10 * time.Minute)
+	go rr.challengeRtr.periodicallyDeleteChallengesOlderThan(10 * time.Minute)
 
 	return &rr
 }
 
 func (rr *rootRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-  log.Print(r)
 	// If request has come in with no cookie, set cookie in the response.
 	if len(r.Cookies()) == 0 {
 		c := http.Cookie{
