@@ -3,7 +3,7 @@ package kuba
 import (
 	"sync"
 	"time"
-	// "math"
+	"errors"
 	"fmt"
 )
 
@@ -50,7 +50,10 @@ type kubaGame struct {
 
 func newKubaGame(
 	config Config, onAsyncUpdate func(), onGameOver func(),
-	firstMoveTimeout time.Duration) *kubaGame {
+	firstMoveTimeout time.Duration) (*kubaGame, error) {
+  if config.TimeControl <= 0 || config.TimeControl > time.Hour {
+    return nil, errors.New("time control should be > 0s and <= 1hr")
+  }
 	var x, R, B, W Marble = marbleNil, marbleRed, marbleBlack, marbleWhite
 	startPosition := [][]Marble{
 		{W, W, x, x, x, B, B},
@@ -65,11 +68,11 @@ func newKubaGame(
 	agents := make(map[AgentColor]*agent)
 	agents[agentWhite] = &agent{
 		score: 0,
-		time:  config.InitialTime,
+		time:  config.TimeControl,
 	}
 	agents[agentBlack] = &agent{
 		score: 0,
-		time:  config.InitialTime,
+		time:  config.TimeControl,
 	}
 
 	firstMoveDeadline := time.Now().Add(firstMoveTimeout)
@@ -79,7 +82,7 @@ func newKubaGame(
 		board:             startPosition,
 		whoseTurn:         agentWhite,
 		winThreshold:      7,
-		clockEnabled:      config.InitialTime > 0*time.Second,
+		clockEnabled:      config.TimeControl > 0*time.Second,
 		posToCount:        make(map[string]int),
 		firstMoveDeadline: &firstMoveDeadline,
 		onAsyncUpdate:     onAsyncUpdate,
@@ -88,7 +91,7 @@ func newKubaGame(
 	kg.firstMoveTimer =
 		time.AfterFunc(firstMoveTimeout, kg.firstMoveTimeoutCallback)
 
-	return &kg
+	return &kg, nil
 }
 
 func (kg *kubaGame) boardSize() int {

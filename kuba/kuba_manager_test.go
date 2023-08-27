@@ -28,7 +28,12 @@ func fakeBlackCookie() *http.Cookie {
 }
 
 func TestNewKubaManager(t *testing.T) {
-	km := NewKubaManager(Config{}, fakeWhiteCookie(), fakeBlackCookie(), nil, nil)
+	km, err := NewKubaManager(
+    Config{TimeControl: time.Minute}, fakeWhiteCookie(), fakeBlackCookie(), nil,
+    nil)
+  if err != nil {
+    t.Fatal(err)
+  }
 
 	if len(km.cookieToUser) != 2 {
 		t.Error("num users did not match expectation")
@@ -45,8 +50,11 @@ func TestNewKubaManager(t *testing.T) {
 }
 
 func TestTryMove(t *testing.T) {
-	km := NewKubaManager(
-		Config{}, fakeWhiteCookie(), fakeBlackCookie(), nil, nil)
+	km, err := NewKubaManager(
+		Config{TimeControl: time.Minute}, fakeWhiteCookie(), fakeBlackCookie(), nil, nil)
+  if err != nil {
+    t.Fatal(err)
+  }
 
 	type testCase struct {
 		m     Move
@@ -69,9 +77,12 @@ func TestTryMove(t *testing.T) {
 }
 
 func TestMarshalJSON(t *testing.T) {
-	km := NewKubaManager(
-		Config{InitialTime: 600 * time.Second}, fakeWhiteCookie(),
+	km, err := NewKubaManager(
+		Config{TimeControl: 600 * time.Second}, fakeWhiteCookie(),
 		fakeBlackCookie(), nil, nil)
+  if err != nil {
+    t.Fatal(err)
+  }
 	b, err := json.Marshal(km)
 	if err != nil {
 		t.Errorf("marshal json error: %s", err.Error())
@@ -89,9 +100,12 @@ func TestMarshalJSON(t *testing.T) {
 }
 
 func TestTryResign(t *testing.T) {
-	km := NewKubaManager(
-		Config{InitialTime: 600 * time.Second}, fakeWhiteCookie(),
+	km, err := NewKubaManager(
+		Config{TimeControl: 600 * time.Second}, fakeWhiteCookie(),
 		fakeBlackCookie(), nil, nil)
+  if err != nil {
+    t.Fatal(err)
+  }
 	if km == nil {
 		t.Error("manager is nil")
 	}

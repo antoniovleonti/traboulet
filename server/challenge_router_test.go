@@ -80,9 +80,9 @@ func TestGetChallenges(t *testing.T) {
 	cr.challenges["a"] =
 		newChallengeHandler(fakeWhiteCookie(), kuba.Config{}, nil)
 	cr.challenges["b"] = newChallengeHandler(
-		fakeWhiteCookie(), kuba.Config{InitialTime: 1 * time.Minute}, nil)
+		fakeWhiteCookie(), kuba.Config{TimeControl: 1 * time.Minute}, nil)
 	cr.challenges["c"] = newChallengeHandler(
-		fakeWhiteCookie(), kuba.Config{InitialTime: 1 * time.Hour}, nil)
+		fakeWhiteCookie(), kuba.Config{TimeControl: 1 * time.Hour}, nil)
 
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
@@ -108,10 +108,10 @@ func TestGetChallenges(t *testing.T) {
 		if !ok {
 			t.Error("expected key " + k + " to exist in result")
 		}
-		if ok && actualv.Config.InitialTime != v.config.InitialTime {
+		if ok && actualv.Config.TimeControl != v.config.TimeControl {
 			t.Errorf(
 				"time %s does not match expected %s",
-				actualv.Config.InitialTime.String(), v.config.InitialTime.String())
+				actualv.Config.TimeControl.String(), v.config.TimeControl.String())
 		}
 	}
 }

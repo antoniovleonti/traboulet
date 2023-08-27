@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+  "time"
 )
 
 func TestNewGameRouter(t *testing.T) {
@@ -19,7 +20,12 @@ func TestNewGameRouter(t *testing.T) {
 func TestAddGame(t *testing.T) {
 	gr := newGameRouter("/")
 
-	gr.addGame(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie())
+	_, err := gr.addGame(
+    kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
+    fakeBlackCookie())
+  if err != nil {
+    t.Error(err)
+  }
 
 	if len(gr.games) != 1 {
 		t.Error("expected number of games to equal 1")
@@ -29,8 +35,13 @@ func TestAddGame(t *testing.T) {
 func TestHandleGameRequestForwarding(t *testing.T) {
 	gr := newGameRouter("/")
 
-	gr.games["testpath"] =
-		newGameHandler(kuba.Config{}, fakeWhiteCookie(), fakeBlackCookie(), nil)
+	game, err := newGameHandler(
+    kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
+    fakeBlackCookie(), nil)
+  if err != nil {
+    t.Fatal(err)
+  }
+  gr.games["testpath"] = game
 
 	// This should trigger the above callback
 	req, err := http.NewRequest("GET", "/testpath/state", nil)

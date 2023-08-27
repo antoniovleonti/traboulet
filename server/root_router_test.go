@@ -59,7 +59,7 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 	rr := NewRootRouter()
 
 	// add challenge
-	b, err := json.Marshal(kuba.Config{InitialTime: 1 * time.Minute})
+	b, err := json.Marshal(kuba.Config{TimeControl: 1 * time.Minute})
 	if err != nil {
 		t.Error(err)
 	}
@@ -95,7 +95,7 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 
 	// accept challenge
 	joinChallengeReq, err :=
-		http.NewRequest("POST", "/challenges/"+challengeID+"/join", nil)
+		http.NewRequest("POST", "/challenges/"+challengeID+"/accept", nil)
 	if err != nil {
 		t.Error(err)
 	}

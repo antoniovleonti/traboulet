@@ -7,17 +7,20 @@ import (
 )
 
 func TestCreateDefaultKubaState(t *testing.T) {
-	kubaWOClock := newKubaGame(Config{}, nil, nil, 30*time.Second)
+	kubaWOClock, err := newKubaGame(
+    Config{TimeControl: time.Minute}, nil, nil, 30*time.Second)
+  if err != nil {
+    t.Fatal(err)
+  }
 	if kubaWOClock == nil {
 		t.Error("var kuba should not be nil")
 	}
 
-	if kubaWOClock.clockEnabled {
-		t.Error("clock should not be enabled")
-	}
-
-	kubaWClock := newKubaGame(
-		Config{InitialTime: 60 * time.Second}, nil, nil, 30*time.Second)
+	kubaWClock, err := newKubaGame(
+		Config{TimeControl: 60 * time.Second}, nil, nil, 30*time.Second)
+  if err != nil {
+    t.Fatal(err)
+  }
 	if kubaWOClock == nil {
 		t.Error("var kuba should not be nil")
 	}
@@ -28,7 +31,11 @@ func TestCreateDefaultKubaState(t *testing.T) {
 }
 
 func TestIsInBounds(t *testing.T) {
-	kuba := newKubaGame(Config{}, nil, nil, 30*time.Second)
+	kuba, err := newKubaGame(
+    Config{TimeControl: time.Minute}, nil, nil, 30*time.Second)
+  if err != nil {
+    t.Fatal(err)
+  }
 
 	inBoundsCases := [][2]int{
 		{0, 0},
@@ -108,8 +115,11 @@ func TestValidateMove(t *testing.T) {
 }
 
 func TestExecuteMove(t *testing.T) {
-	kuba := newKubaGame(
-		Config{InitialTime: 500 * time.Millisecond}, nil, nil, 30*time.Second)
+	kuba, err := newKubaGame(
+		Config{TimeControl: 500 * time.Millisecond}, nil, nil, 30*time.Second)
+  if err != nil {
+    t.Fatal(err)
+  }
 
 	type moveTest struct {
 		move  Move
@@ -258,7 +268,11 @@ func TestResign(t *testing.T) {
 		onGameOver := func() {
 			onGameOverCalled = true
 		}
-		kuba := newKubaGame(Config{}, nil, onGameOver, 30*time.Second)
+		kuba, err := newKubaGame(
+      Config{TimeControl: 1 * time.Minute}, nil, onGameOver, 30*time.Second)
+    if err != nil {
+      t.Fatal(err)
+    }
 		if !kuba.resign(c) {
 			t.Error("couldn't resign")
 		}
@@ -324,9 +338,12 @@ func TestNotifyOutOfTime(t *testing.T) {
 	timeoutCb := func() {
 		done <- struct{}{}
 	}
-	kuba := newKubaGame(
-		Config{InitialTime: 2 * time.Millisecond}, timeoutCb, nil,
+	kuba, err := newKubaGame(
+		Config{TimeControl: 2 * time.Millisecond}, timeoutCb, nil,
 		1*time.Millisecond)
+  if err != nil {
+    t.Fatal(err)
+  }
 	kuba.ExecuteMove(Move{X: 0, Y: 0, D: DirDown})
 	// Do nothing... wait on black to timeout
 	<-done
@@ -340,9 +357,12 @@ func TestFirstMoveDeadline(t *testing.T) {
 	timeoutCb := func() {
 		done <- struct{}{}
 	}
-	kuba := newKubaGame(
-		Config{InitialTime: 1 * time.Millisecond}, timeoutCb, nil,
+	kuba, err := newKubaGame(
+		Config{TimeControl: 1 * time.Millisecond}, timeoutCb, nil,
 		1*time.Millisecond)
+  if err != nil {
+    t.Fatal(err)
+  }
 
 	// (do nothing)
 
@@ -350,4 +370,22 @@ func TestFirstMoveDeadline(t *testing.T) {
 	if kuba.status != statusAborted {
 		t.Errorf("expected aborted status; got %d", kuba.status)
 	}
+}
+
+func TestInvalidTimeControl(t *testing.T) {
+  times := []time.Duration{
+    -1 * time.Minute,
+    24 * time.Hour,
+    0 * time.Minute,
+  }
+  for _, tc := range times {
+    kuba, err := newKubaGame(
+      Config{TimeControl: tc}, nil, nil, 30*time.Second)
+    if err == nil {
+      t.Error(err)
+    }
+    if kuba != nil {
+      t.Errorf("expected error when creating game with time %s", tc.String())
+    }
+  }
 }

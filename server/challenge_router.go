@@ -11,12 +11,12 @@ import (
 	"time"
 )
 
-type createGameFnT func(kuba.Config, *http.Cookie, *http.Cookie) string
+type createGameFnT func(kuba.Config, *http.Cookie, *http.Cookie) (string, error)
 
 type challengeRouter struct {
 	router     *httprouter.Router
 	challenges map[string]*challengeHandler
-	pathGen    *pathGenerator
+	pathGen    *nonCryptoStringGen
 	createGame createGameFnT
 	prefix     string
 	mutex      sync.RWMutex
@@ -30,7 +30,7 @@ func newChallengeRouter(
 	cr := challengeRouter{
 		router:     httprouter.New(),
 		challenges: make(map[string]*challengeHandler),
-		pathGen:    newPathGenerator(),
+		pathGen:    newNonCryptoStringGen(),
 		createGame: createGame,
 		prefix:     prefix,
 	}
@@ -93,7 +93,7 @@ func (cr *challengeRouter) postChallenge(
 	defer cr.mutex.Unlock()
 
 	// create challenge
-	path := cr.pathGen.newPath(8)
+	path := cr.pathGen.newString(8)
 	bind := func(c kuba.Config, c1, c2 *http.Cookie) (string, error) {
 		return cr.onChallengeAccepted(path, c, c1, c2)
 	}
@@ -132,7 +132,7 @@ func (cr *challengeRouter) onChallengeAccepted(
 	}
 
 	delete(cr.challenges, id)
-	return cr.createGame(config, cookie1, cookie2), nil
+	return cr.createGame(config, cookie1, cookie2)
 }
 
 func (cr *challengeRouter) periodicallyDeleteChallengesOlderThan(

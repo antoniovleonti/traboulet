@@ -3,6 +3,6 @@ package kuba
 import "time"
 
 type Config struct {
-	InitialTime time.Duration `json:"initialTimeNs"`
+	TimeControl time.Duration `json:"TimeControlNs"`
 	// More config can go here in the future.
 }

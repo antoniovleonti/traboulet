@@ -13,7 +13,7 @@ type gameRouter struct {
 	router     *httprouter.Router
 	challenges map[string]*challengeHandler
 	games      map[string]*gameHandler
-	pathGen    *pathGenerator
+	pathGen    *nonCryptoStringGen
 	prefix     string
 	mutex      sync.RWMutex
 }
@@ -25,7 +25,7 @@ func newGameRouter(prefix string) *gameRouter {
 	gr := gameRouter{
 		router:  httprouter.New(),
 		games:   make(map[string]*gameHandler),
-		pathGen: newPathGenerator(),
+		pathGen: newNonCryptoStringGen(),
 		prefix:  prefix,
 	}
 
@@ -65,7 +65,7 @@ func (gr *gameRouter) forwardToHandler(
 }
 
 func (gr *gameRouter) addGame(
-	config kuba.Config, cookie1, cookie2 *http.Cookie) string {
+	config kuba.Config, cookie1, cookie2 *http.Cookie) (string, error) {
 	gr.mutex.Lock()
 	defer gr.mutex.Unlock()
 
@@ -74,13 +74,17 @@ func (gr *gameRouter) addGame(
 		cookie1, cookie2 = cookie2, cookie1
 	}
 
-	id := gr.pathGen.newPath(8)
+	id := gr.pathGen.newString(8)
 	onGameOver := func() {
 		gr.removeGame(id)
 	}
-	gr.games[id] = newGameHandler(config, cookie1, cookie2, onGameOver)
+	game, err := newGameHandler(config, cookie1, cookie2, onGameOver)
+  if err != nil {
+    return "", err
+  }
+  gr.games[id] = game
 
-	return gr.prefix + id
+	return gr.prefix + id, nil
 }
 
 func (gr *gameRouter) removeGame(id string) {

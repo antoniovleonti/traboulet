@@ -45,7 +45,7 @@ func TestPostJoinValid(t *testing.T) {
 	}
 
 	// Build request
-	postJoinReq, err := http.NewRequest("POST", "/join", nil)
+	postJoinReq, err := http.NewRequest("POST", "/accept", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ func TestPostJoinNoCookie(t *testing.T) {
 	}
 
 	// Build request
-	postJoinReq, err := http.NewRequest("POST", "/join", nil)
+	postJoinReq, err := http.NewRequest("POST", "/accept", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,7 +122,7 @@ func TestPostJoinSameCookie(t *testing.T) {
 	}
 
 	// Build request
-	postJoinReq, err := http.NewRequest("POST", "/join", nil)
+	postJoinReq, err := http.NewRequest("POST", "/accept", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +158,7 @@ func TestPostJoinAgain(t *testing.T) {
 	}
 
 	// Build request
-	postJoinReq, err := http.NewRequest("POST", "/join", nil)
+	postJoinReq, err := http.NewRequest("POST", "/accept", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,7 +189,7 @@ func TestIntegrationWithGameRouter(t *testing.T) {
 	cr := newChallengeRouter("/", gr.addGame)
 
 	// add challenge
-	b, err := json.Marshal(kuba.Config{InitialTime: 1 * time.Minute})
+	b, err := json.Marshal(kuba.Config{TimeControl: 1 * time.Minute})
 	if err != nil {
 		t.Error(err)
 	}
@@ -223,7 +223,8 @@ func TestIntegrationWithGameRouter(t *testing.T) {
 	}
 
 	// accept challenge
-	joinChallengeReq, err := http.NewRequest("POST", "/"+challengeID+"/join", nil)
+	joinChallengeReq, err :=
+    http.NewRequest("POST", "/"+challengeID+"/accept", nil)
 	if err != nil {
 		t.Error(err)
 	}

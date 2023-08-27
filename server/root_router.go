@@ -13,12 +13,14 @@ type rootRouter struct {
 	router       *httprouter.Router
 	challengeRtr *challengeRouter
 	gameRtr      *gameRouter
+  nameGen *nonCryptoStringGen
 }
 
 func NewRootRouter() *rootRouter {
 	rr := rootRouter{
 		router:  httprouter.New(),
 		gameRtr: newGameRouter("/games/"),
+    nameGen: newNonCryptoStringGen(),
 	}
 	rr.challengeRtr = newChallengeRouter("/challenges/", rr.gameRtr.addGame)
 
@@ -41,7 +43,7 @@ func (rr *rootRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// If request has come in with no cookie, set cookie in the response.
 	if len(r.Cookies()) == 0 {
 		c := http.Cookie{
-			Name:  "Anonymous",
+			Name:  rr.nameGen.newString(8),
 			Value: newCookieValue(8),
 			Path:  "/",
 		}

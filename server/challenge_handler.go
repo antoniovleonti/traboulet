@@ -29,6 +29,7 @@ type challengeHandler struct {
 
 type challengeHandlerView struct {
 	Config kuba.Config `json:"config"`
+  CreatorID string `json:"creatorID"`
 }
 
 func newChallengeHandler(
@@ -46,7 +47,7 @@ func newChallengeHandler(
 
 	ch.router.GET("/", ch.getChallenge)
 	ch.router.GET("/update", ch.getUpdate)
-	ch.router.POST("/join", ch.postJoin)
+	ch.router.POST("/accept", ch.postAccept)
 
 	return &ch
 }
@@ -74,7 +75,7 @@ func (ch *challengeHandler) getUpdate(
 	ch.pub.addSubscriber(w)
 }
 
-func (ch *challengeHandler) postJoin(
+func (ch *challengeHandler) postAccept(
 	w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	ch.mutex.Lock()
 	defer ch.mutex.Unlock()
@@ -91,7 +92,7 @@ func (ch *challengeHandler) postJoin(
 	}
 	c := r.Cookies()[0] // just grab first cookie, idc if they have multiple.
 	// check cookie is not the same as the creator
-	if c.Value == ch.creator.Value {
+	if c.Name == ch.creator.Name && c.Value == ch.creator.Value {
 		http.Error(
 			w, "You cannot accept your own challenge.", http.StatusBadRequest)
 		return
@@ -128,5 +129,6 @@ func (ch *challengeHandler) postJoin(
 func (ch *challengeHandler) MarshalJSON() ([]byte, error) {
 	return json.Marshal(challengeHandlerView{
 		Config: ch.config,
+    CreatorID: ch.creator.Name,
 	})
 }
