@@ -24,7 +24,7 @@ createRoomForm.addEventListener("submit", e => {
   e.preventDefault();
   let formRaw = Object.fromEntries(new FormData(createRoomForm));
   let data = JSON.stringify({
-    initialTimeNs: formRaw.initialTimeMin * 6e10
+    timeControlNs: formRaw.initialTimeMin * 6e10
   });
   fetch('/api/challenges', { method: 'POST', body: data, redirect: 'follow' })
       .then(response => {
@@ -33,7 +33,7 @@ createRoomForm.addEventListener("submit", e => {
         }
         if (!response.ok) {
           response.text().then(txt => {
-            createErr.innerHTML = `${response.status} ${txt}`;
+            console.log(`${response.status} ${txt}`);
           });
         }
       })

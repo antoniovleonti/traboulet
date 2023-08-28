@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+
+<head><title>Kuba</title><head>
+
+<body>
+
+<h1>Traboulet</h1>
+<h2>Challenge</h2>
+
+<div id=not-found>
+<h3>Challenge not found</h3>
+This challenge does not exist & cannot be joined.
+</div>
+
+<div id=found hidden>
+<h3>Join</h3>
+You are about to accept the following challenge:<br>
+Time control: <span class=time-control-span></span><br>
+<button id=accept-button type=submit class="pure-button pure-button-primary">
+  Accept
+</button><br>
+You will be redirected to the game once you accept.
+</div>
+
+<div id=waiting hidden>
+<h3>Waiting for another player</h3>
+You've created the following challenge:<br>
+Time control: <span class=time-control-span></span><br>
+You can share the link to this page.
+You will play with the first person to accept this challenge.<br>
+You will be redirected to the game once someone accepts.
+</div>
+
+</body>
+
+<script src='/scripts/challenge_browser.js'></script>
+<script src='/scripts/challenge.js'></script>
+
+</html>

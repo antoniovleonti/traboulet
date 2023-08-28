@@ -3,28 +3,31 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+
 <head><title>Kuba</title><head>
 
 <body>
 
 <h1>Traboulet</h1>
-<h2>Home page</h2>
-
-This is the webpage served when you go to /.
+<h2>Home</h2>
 
 <h3>Create a challenge</h3>
 
+Fill out the following form and press 'Create' to add a challenge.
 
-<form id=new-challenge-form>
+<form id=new-challenge-form class="pure-form pure-form-aligned">
 	<label for=initial-time-min>Time control (min):</label>
-	<input type=number id=initial-time-min name=initialTimeMin><br>
-	<input type=submit value=Create>
+	<input type=number id=initial-time-min name=initialTimeMin required=""><br>
+	<button type=submit class="pure-button">Create</button>
 	<span id=create-err></span>
 </form>
 
 <h3>Public challenges</h3>
 
-<table>
+Below are open challenges from other players.
+
+<table class="pure-table">
 	<thead>
 		<tr>
 			<th>Time control (min)</th>

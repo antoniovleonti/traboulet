@@ -17,7 +17,7 @@ class ChallengeBrowser {
     // a challenge has 1 field:
     // config
     // which itself has 1 field:
-    // initial_time_ns
+    // initialTimeNs
     if (JSON.stringify(challenges) == '{}') {
       this.table_.appendChild(this.createEmpty());
     }
@@ -39,7 +39,7 @@ class ChallengeBrowser {
 	createRow(id, challenge) {
     let tr = document.createElement("tr");
     let td = document.createElement("td");
-    let ns = challenge.config.initial_time_ns;
+    let ns = challenge.config.timeControlNs;
     let timeTxt = document.createTextNode(ChallengeBrowser.formatNs(ns));
     tr.appendChild(td);
     td.appendChild(timeTxt);
@@ -47,11 +47,9 @@ class ChallengeBrowser {
     let a = document.createElement("a");
     a.title = "You will be brought to another page to confirm.";
     a.href = "/challenges/" + id;
-    let button = document.createElement("button");
-    let buttonTxt = document.createTextNode("Join");
+    let atxt = document.createTextNode("View challenge");
     tr.appendChild(a);
-    a.appendChild(button);
-    button.appendChild(buttonTxt);
+    a.appendChild(atxt);
 
     return tr;
   }
