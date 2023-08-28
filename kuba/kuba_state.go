@@ -3,7 +3,6 @@ package kuba
 import (
 	"sync"
 	"time"
-	"errors"
 	"fmt"
 )
 
@@ -26,8 +25,10 @@ func (s Status) String() string {
 		return "BLACK_WON"
 	} else if s == statusDraw {
 		return "DRAW"
+	} else if s == statusAborted {
+    return "ABORTED"
 	} else {
-		panic("Invalid Status!")
+		panic(fmt.Sprintf("Invalid Status %d!", s))
 	}
 }
 
@@ -51,8 +52,8 @@ type kubaGame struct {
 func newKubaGame(
 	config Config, onAsyncUpdate func(), onGameOver func(),
 	firstMoveTimeout time.Duration) (*kubaGame, error) {
-  if config.TimeControl <= 0 || config.TimeControl > time.Hour {
-    return nil, errors.New("time control should be > 0s and <= 1hr")
+  if err := config.Validate(); err != nil {
+    return nil, err
   }
 	var x, R, B, W Marble = marbleNil, marbleRed, marbleBlack, marbleWhite
 	startPosition := [][]Marble{
