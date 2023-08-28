@@ -55,8 +55,12 @@ func TestPostChallenge(t *testing.T) {
 func TestHandleChallengeRequestForwarding(t *testing.T) {
 	cr := newChallengeRouter("/", nil)
 
-	cr.challenges["testpath"] =
-		newChallengeHandler(fakeWhiteCookie(), kuba.Config{}, nil)
+	challenge, err :=
+    newChallengeHandler(fakeWhiteCookie(), kuba.Config{time.Minute}, nil)
+  if err != nil {
+    t.Error(err)
+  }
+  cr.challenges["testpath"] = challenge
 
 	req, err :=
 		http.NewRequest("GET", "/testpath/", nil)
@@ -77,12 +81,37 @@ func TestHandleChallengeRequestForwarding(t *testing.T) {
 func TestGetChallenges(t *testing.T) {
 	cr := newChallengeRouter("/", nil)
 
-	cr.challenges["a"] =
-		newChallengeHandler(fakeWhiteCookie(), kuba.Config{}, nil)
-	cr.challenges["b"] = newChallengeHandler(
-		fakeWhiteCookie(), kuba.Config{TimeControl: 1 * time.Minute}, nil)
-	cr.challenges["c"] = newChallengeHandler(
-		fakeWhiteCookie(), kuba.Config{TimeControl: 1 * time.Hour}, nil)
+  type challengeParams struct {
+    s string
+    cookie *http.Cookie
+    config kuba.Config
+  }
+
+  newChallengeParams := func(
+    s string, cookie *http.Cookie, config kuba.Config) *challengeParams {
+    cp := challengeParams{
+      s: s,
+      cookie: cookie,
+      config: config,
+    }
+    return &cp
+  }
+
+  paramsList := []*challengeParams{
+    newChallengeParams("a", fakeWhiteCookie(), kuba.Config{time.Minute}),
+    newChallengeParams(
+      "b", fakeWhiteCookie(), kuba.Config{time.Minute}),
+    newChallengeParams(
+      "c", fakeWhiteCookie(), kuba.Config{time.Hour}),
+  }
+
+  for _, params := range paramsList {
+    challenge, err := newChallengeHandler(params.cookie, params.config, nil)
+    if err != nil {
+      t.Fatal(err)
+    }
+    cr.challenges[params.s] = challenge
+  }
 
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
@@ -154,5 +183,29 @@ func TestDeleteChallengesOlderThan(t *testing.T) {
 
 	if _, ok := cr.challenges["not too old"]; !ok {
 		t.Error("expected newer challenge to stay")
+	}
+}
+
+func TestPostChallengeInvalidConfig(t *testing.T) {
+	cr := newChallengeRouter("/", nil)
+
+	// create body
+	config := kuba.Config{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// make request
+	req, err := http.NewRequest("POST", "/", bytes.NewReader(b))
+	req.AddCookie(fakeWhiteCookie())
+
+	// handle request
+	rr := httptest.NewRecorder()
+	cr.ServeHTTP(rr, req)
+
+	// check status
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf(
+			"code %d does not match expectation %d", rr.Code, http.StatusBadRequest)
 	}
 }

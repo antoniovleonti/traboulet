@@ -97,7 +97,12 @@ func (cr *challengeRouter) postChallenge(
 	bind := func(c kuba.Config, c1, c2 *http.Cookie) (string, error) {
 		return cr.onChallengeAccepted(path, c, c1, c2)
 	}
-	cr.challenges[path] = newChallengeHandler(cookie, config, bind)
+	challenge, err := newChallengeHandler(cookie, config, bind)
+  if err != nil {
+    http.Error(w, err.Error(), http.StatusBadRequest)
+    return
+  }
+  cr.challenges[path] = challenge
 
 	w.Header().Add("Location", cr.prefix+path)
 	w.WriteHeader(http.StatusSeeOther)

@@ -53,7 +53,7 @@ func (gh *gameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (gh *gameHandler) getGameUpdate(w http.ResponseWriter, r *http.Request,
 	_ httprouter.Params) {
-	gh.pub.addSubscriber(w)
+	<-gh.pub.subscribe(w)
 }
 
 func (gh *gameHandler) getState(

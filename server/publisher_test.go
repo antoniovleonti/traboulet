@@ -4,31 +4,41 @@ import (
 	"io"
 	"net/http/httptest"
 	"testing"
+  "time"
 )
 
 func TestPublisher(t *testing.T) {
 	p := publisher{}
 
-	var subs []*httptest.ResponseRecorder
+  type sub struct {
+    done <-chan struct{}
+    rr *httptest.ResponseRecorder
+  }
+
+	var subs []sub
 	for i := 0; i < 100; i++ {
-		subs = append(subs, httptest.NewRecorder())
-		p.addSubscriber(subs[i])
+    rr := httptest.NewRecorder()
+    done := p.subscribe(rr)
+    subs = append(subs, sub{done, rr})
 	}
 
 	msg := "message"
-	p.publish(msg)
+	go p.publish(msg)
 
-	if len(p.subscribers) != 0 {
-		t.Error("subscribers was not cleared after publish")
-	}
-
-	for i := 0; i < 100; i++ {
-		resp := subs[i].Result()
+	for _, s := range subs {
+    <-s.done
+		resp := s.rr.Result()
 		body, _ := io.ReadAll(resp.Body)
 
 		if actual := string(body); actual != msg {
-			t.Errorf("recorded message \"%s\" did not match expected message \"%s\".",
+			t.Errorf(
+        "recorded message \"%s\" did not match expected message \"%s\".",
 				actual, msg)
 		}
+	}
+  time.Sleep(time.Millisecond)
+
+	if len(p.subscribers) != 0 {
+		t.Error("subscribers was not cleared after publish")
 	}
 }

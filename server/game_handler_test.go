@@ -95,7 +95,9 @@ func postMove(t *testing.T, gh *gameHandler, body []byte,
 		t.Fatal(err)
 	}
 	getGameUpdateResp := httptest.NewRecorder()
-	gh.ServeHTTP(getGameUpdateResp, getGameUpdateReq)
+	go gh.ServeHTTP(getGameUpdateResp, getGameUpdateReq)
+  // just wait a little for the subscriber to be ready for pushes
+  time.Sleep(time.Millisecond)
 
 	// Run the request through our handler
 	postMoveResp := httptest.NewRecorder()

@@ -6,23 +6,31 @@ import (
 	"sync"
 )
 
+type subscriber struct {
+  c chan struct{}
+  w http.ResponseWriter
+}
+
 // Streamlines responding to long poll requests (e.g. chat, game updates).
 type publisher struct {
-	subscribers []http.ResponseWriter
+	subscribers []subscriber
 	mutex       sync.Mutex
 }
 
-func (p *publisher) addSubscriber(w http.ResponseWriter) {
+func (p *publisher) subscribe(w http.ResponseWriter) <-chan struct{}  {
 	p.mutex.Lock()
-	defer p.mutex.Unlock()
-	p.subscribers = append(p.subscribers, w)
+  c := make(chan struct{})
+	p.subscribers = append(p.subscribers, subscriber{c, w})
+  p.mutex.Unlock()
+  return c
 }
 
 func (p *publisher) publish(msg string) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	for _, w := range p.subscribers {
-		fmt.Fprint(w, msg)
+	for _, s := range p.subscribers {
+		fmt.Fprint(s.w, msg)
+    s.c <- struct{}{}
 	}
 	p.subscribers = nil
 }
@@ -32,8 +40,9 @@ func (p *publisher) publish(msg string) {
 func (p *publisher) do(f func(http.ResponseWriter)) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	for _, w := range p.subscribers {
-		f(w)
+	for _, s := range p.subscribers {
+		f(s.w)
+    s.c <- struct{}{}
 	}
 	p.subscribers = nil
 }

@@ -34,7 +34,10 @@ type challengeHandlerView struct {
 
 func newChallengeHandler(
 	c *http.Cookie, config kuba.Config,
-	onChallengeAccepted challengeAcceptedCb) *challengeHandler {
+	onChallengeAccepted challengeAcceptedCb) (*challengeHandler, error) {
+  if err := config.Validate(); err != nil {
+    return nil, err
+  }
 	ch := challengeHandler{
 		router:              httprouter.New(),
 		timestamp:           time.Now(),
@@ -49,7 +52,7 @@ func newChallengeHandler(
 	ch.router.GET("/update", ch.getUpdate)
 	ch.router.POST("/accept", ch.postAccept)
 
-	return &ch
+	return &ch, nil
 }
 
 func (ch *challengeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +75,7 @@ func (ch *challengeHandler) getChallenge(
 
 func (ch *challengeHandler) getUpdate(
 	w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	ch.pub.addSubscriber(w)
+	<-ch.pub.subscribe(w)
 }
 
 func (ch *challengeHandler) postAccept(
