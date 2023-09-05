@@ -21,9 +21,6 @@ function getChallenge() {
         if (response.ok) {
           return response.json();
         }
-        response.text().then(txt => {
-          return;
-        });
       })
       .then(challenge => {
         if (challenge == null) {

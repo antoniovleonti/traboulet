@@ -4,6 +4,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"kuba"
 	mrand "math/rand"
+  "log"
 	"net/http"
 	"net/url"
 	"sync"
@@ -83,6 +84,8 @@ func (gr *gameRouter) addGame(
     return "", err
   }
   gr.games[id] = game
+
+  log.Print("Created game " + id + ".")
 
 	return gr.prefix + id, nil
 }

@@ -3,7 +3,9 @@ package server
 import (
 	"encoding/json"
 	"github.com/julienschmidt/httprouter"
+  "github.com/antoniovleonti/sse"
 	"kuba"
+  "log"
 	"net/http"
 )
 
@@ -30,8 +32,9 @@ func newGameHandler(
   }
   gh.km = km
 
+	// gh.router.Handler("GET", "/state-stream", gh.pub)
+	gh.router.GET("/state-stream", gh.getStateStream)
 	gh.router.GET("/state", gh.getState)
-	gh.router.GET("/update", gh.getGameUpdate)
 	gh.router.POST("/move", gh.postMove)
 	gh.router.POST("/resignation", gh.postResignation)
 
@@ -39,11 +42,20 @@ func newGameHandler(
 }
 
 func (gh *gameHandler) publishUpdate() {
-	b, err := json.Marshal(gh.km)
-	if err != nil {
-		panic("couldn't marshal game state")
-	}
-	gh.pub.publish(string(b))
+  b, err := json.Marshal(gh.km)
+  if err != nil {
+    panic("couldn't marshal game state")
+  }
+  event := sse.Event{
+    Data: string(b),
+  }
+
+	gh.pub.do(func(w http.ResponseWriter) {
+		err := event.Render(w)
+    if err != nil {
+      log.Printf("Error writing event: %v\n", err)
+    }
+  }, false)
 }
 
 // Convenience method
@@ -51,9 +63,9 @@ func (gh *gameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	gh.router.ServeHTTP(w, r)
 }
 
-func (gh *gameHandler) getGameUpdate(w http.ResponseWriter, r *http.Request,
-	_ httprouter.Params) {
-	<-gh.pub.subscribe(w)
+func (gh *gameHandler) getStateStream(
+	w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+  gh.pub.subscribe(w, r.Context().Done())
 }
 
 func (gh *gameHandler) getState(

@@ -75,7 +75,7 @@ func (ch *challengeHandler) getChallenge(
 
 func (ch *challengeHandler) getUpdate(
 	w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	<-ch.pub.subscribe(w)
+	ch.pub.subscribe(w, r.Context().Done())
 }
 
 func (ch *challengeHandler) postAccept(
@@ -126,7 +126,7 @@ func (ch *challengeHandler) postAccept(
 		w.WriteHeader(http.StatusSeeOther)
 		w.Write([]byte(
 			"Game has started; check header Location field for game path."))
-	})
+	}, true)
 }
 
 func (ch *challengeHandler) MarshalJSON() ([]byte, error) {

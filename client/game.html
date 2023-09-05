@@ -3,6 +3,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+
 <head><title>Kuba</title><head>
 
 <body>
@@ -10,10 +12,91 @@
 <h1>Traboulet</h1>
 <h2>Game page</h2>
 
-This is the webpage served when you go to /game/xxxx.
+This page will be shitty until I write something better.
+
+<h3>Play</h3>
+
+Status: <code id=status>game not found</code>
+
+<div class=pure-g>
+
+<div class=pure-u-1-2>
+<h4>Board</h4>
+<pre id=board>
+     0 1 2 3 4 5 6
+   +---------------+ x
+ 0 | . . . . . . . |
+ 1 | . . . . . . . |
+ 2 | . . . . . . . |
+ 3 | . . . . . . . |
+ 4 | . . . . . . . |
+ 5 | . . . . . . . |
+ 6 | . . . . . . . |
+   +---------------+
+   y
+</pre>
+</div>
+
+<div class=pure-u-1-2>
+<h4>
+Other player (<code id=other-player-color>-----</code>)
+<span id=other-player-activity hidden>***</span>
+</h4>
+Time: <code id=other-player-clock></code><br>
+Score: <code id=other-player-score></code><br>
+<h4>
+You (<code id=your-color>-----</code>)
+<span id=your-activity hidden>***</span>
+</h4>
+Time: <code id=your-clock></code><br>
+Score: <code id=your-score></code><br>
+</div>
+
+</div>
+
+<h4>Input</h4>
+<h5>Make move</h5>
+<form id=move-form class="pure-form">
+<label for=move-x>x: </label>
+<select id="move-x" name="x">
+  <option>0</option>
+  <option>1</option>
+  <option>2</option>
+  <option>3</option>
+  <option>4</option>
+  <option>5</option>
+  <option>6</option>
+</select>
+<label for=move-y>y: </label>
+<select id="move-y" name="y">
+  <option>0</option>
+  <option>1</option>
+  <option>2</option>
+  <option>3</option>
+  <option>4</option>
+  <option>5</option>
+  <option>6</option>
+</select>
+<label for=move-d>direction: </label>
+<select id="move-d" name="d">
+  <option>UP</option>
+  <option>DOWN</option>
+  <option>LEFT</option>
+  <option>RIGHT</option>
+</select>
+<button type=submit class="pure-button">Submit move</button><br>
+</form>
+<h5>Resign</h5>
+<button type=button class="pure-button">Resign</button>
 
 </body>
 
-<script src='/scripts/main.js'></script>
+<script src='/scripts/activity_display.js'></script>
+<script src='/scripts/color_display.js'></script>
+<script src='/scripts/score_display.js'></script>
+<script src='/scripts/clocks_display.js'></script>
+<script src='/scripts/board_display.js'></script>
+<script src='/scripts/status_display.js'></script>
+<script src='/scripts/game.js'></script>
 
 </html>

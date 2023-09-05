@@ -14,7 +14,10 @@ type User struct {
 
 type clientViewPlayer struct {
 	TimeNs   int64      `json:"timeNs"`
-	Deadline *time.Time `json:"deadline,omitempty"`
+	Deadline *time.Time `json:"deadline"`
+  ID string `json:"id"`
+  Color string `json:"color"`
+  Score int `json:"score"`
 }
 
 type ClientView struct {
@@ -26,6 +29,7 @@ type ClientView struct {
 	WinThreshold  int                         `json:"winThreshold"`
 	ClockEnabled  bool                        `json:"clockEnabled"`
 	ColorToPlayer map[string]clientViewPlayer `json:"colorToPlayer"`
+	IDToPlayer map[string]clientViewPlayer `json:"idToPlayer"`
 }
 
 // Handles mapping cookie -> color (black / white) & ensuring players only move
@@ -46,7 +50,7 @@ func NewKubaManager(
 	if black == nil {
 		return nil, errors.New("Missing black cookie")
 	}
-  state, err := newKubaGame(config, onAsyncUpdate, onGameOver, 30*time.Second)
+  state, err := newKubaGame(config, onAsyncUpdate, onGameOver, 10 * time.Minute)
   if err != nil {
     return nil, err
   }
@@ -103,12 +107,19 @@ func (km *KubaManager) TryResign(c *http.Cookie) bool {
 
 func (km KubaManager) GetClientView() ClientView {
 	colorToPlayer := make(map[string]clientViewPlayer)
-	for k, _ := range km.colorToUser {
-		agent := km.state.agents[k]
-		colorToPlayer[k.String()] = clientViewPlayer{
+	idToPlayer := make(map[string]clientViewPlayer)
+	for color, user := range km.colorToUser {
+		agent := km.state.agents[color]
+    player := clientViewPlayer{
 			TimeNs:   agent.time.Nanoseconds(),
 			Deadline: agent.deadline,
+      Color: color.String(),
+      ID: user.cookie.Name,
+      Score: agent.score,
 		}
+
+		colorToPlayer[color.String()] = player
+    idToPlayer[user.cookie.Name] = player
 	}
 
 	return ClientView{
@@ -120,6 +131,7 @@ func (km KubaManager) GetClientView() ClientView {
 		WinThreshold:  km.state.winThreshold,
 		ClockEnabled:  km.state.clockEnabled,
 		ColorToPlayer: colorToPlayer,
+		IDToPlayer: idToPlayer,
 	}
 }
 

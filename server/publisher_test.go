@@ -18,9 +18,14 @@ func TestPublisher(t *testing.T) {
 	var subs []sub
 	for i := 0; i < 100; i++ {
     rr := httptest.NewRecorder()
-    done := p.subscribe(rr)
+    done := make(chan struct{})
+    go func() {
+      p.subscribe(rr, make(chan struct{}))
+      done <- struct{}{}
+    }()
     subs = append(subs, sub{done, rr})
 	}
+  time.Sleep(time.Millisecond)
 
 	msg := "message"
 	go p.publish(msg)
@@ -38,7 +43,7 @@ func TestPublisher(t *testing.T) {
 	}
   time.Sleep(time.Millisecond)
 
-	if len(p.subscribers) != 0 {
+	if p.subscribers.Len() != 0 {
 		t.Error("subscribers was not cleared after publish")
 	}
 }

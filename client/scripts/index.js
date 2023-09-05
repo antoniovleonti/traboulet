@@ -8,7 +8,9 @@ function updateChallengeBrowser() {
           return response.json();
         }
         response.text().then(txt => {
-          throw new Error(`${response.status} ${txt}`);
+          document.getElementById("content").hidden = true;
+          document.getElementById("error").hidden = false;
+          console.log(`${response.status} ${txt}`);
         });
       })
       .then(challenges => {

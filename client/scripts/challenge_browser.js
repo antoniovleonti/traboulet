@@ -1,3 +1,5 @@
+"use strict";
+
 class ChallengeBrowser {
   table_;
 
@@ -63,10 +65,6 @@ class ChallengeBrowser {
     const minutes = Math.floor((ns - hours * nsPerHour) / nsPerMin);
     const seconds =
         Math.floor((ns - hours * nsPerHour - minutes * nsPerMin) / nsPerSec);
-
-    const hoursPadded = hours.toString().padStart(2, '0');
-    const minutesPadded = minutes.toString().padStart(2, '0');
-    const secondsPadded = seconds.toString().padStart(2, '0');
 
     return (hours > 0 ? hours.toString() + "h " : "") +
            (minutes > 0 ? minutes.toString() + "m " : "") +
