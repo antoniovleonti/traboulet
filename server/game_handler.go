@@ -5,8 +5,10 @@ import (
 	"github.com/julienschmidt/httprouter"
   "github.com/antoniovleonti/sse"
 	"kuba"
+  "time"
   "log"
 	"net/http"
+  "sync"
 )
 
 // Handles requests for endpoints related to a particular game. Is not aware
@@ -16,17 +18,18 @@ type gameHandler struct {
 	km     *kuba.KubaManager
 	router *httprouter.Router
 	pub    publisher
+  completionTime *time.Time
+  timeMutex sync.Mutex
 }
 
 func newGameHandler(
-	config kuba.Config, white, black *http.Cookie,
-	onGameOver func()) (*gameHandler, error) {
+	config kuba.Config, white, black *http.Cookie) (*gameHandler, error) {
 	gh := gameHandler{
 		router: httprouter.New(),
 		pub:    publisher{},
 	}
 	km, err :=
-		kuba.NewKubaManager(config, white, black, gh.publishUpdate, onGameOver)
+		kuba.NewKubaManager(config, white, black, gh.publishUpdate, gh.markComplete)
   if err != nil {
     return nil, err
   }
@@ -115,4 +118,21 @@ func (gh *gameHandler) postResignation(
 
 	w.Write([]byte("success"))
 	gh.publishUpdate()
+}
+
+func (gh *gameHandler) markComplete() {
+  gh.timeMutex.Lock()
+  defer gh.timeMutex.Unlock()
+  t := time.Now()
+  gh.completionTime = &t
+}
+
+func (gh *gameHandler) DurationSinceCompletion() *time.Duration {
+  gh.timeMutex.Lock()
+  defer gh.timeMutex.Unlock()
+  if gh.completionTime == nil {
+    return nil
+  }
+  d := time.Since(*gh.completionTime)
+  return &d
 }

@@ -143,7 +143,7 @@ func (cr *challengeRouter) onChallengeAccepted(
 	return cr.createGame(config, cookie1, cookie2)
 }
 
-func (cr *challengeRouter) periodicallyDeleteChallengesOlderThan(
+func (cr *challengeRouter) PeriodicallyDeleteChallengesOlderThan(
 	d time.Duration) {
 	for {
 		time.Sleep(d)

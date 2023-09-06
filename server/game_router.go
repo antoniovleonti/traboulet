@@ -5,6 +5,7 @@ import (
 	"kuba"
 	mrand "math/rand"
   "log"
+  "time"
 	"net/http"
 	"net/url"
 	"sync"
@@ -75,14 +76,11 @@ func (gr *gameRouter) addGame(
 		cookie1, cookie2 = cookie2, cookie1
 	}
 
-	id := gr.pathGen.newString(8)
-	onGameOver := func() {
-		gr.removeGame(id)
-	}
-	game, err := newGameHandler(config, cookie1, cookie2, onGameOver)
+	game, err := newGameHandler(config, cookie1, cookie2)
   if err != nil {
     return "", err
   }
+	id := gr.pathGen.newString(8)
   gr.games[id] = game
 
   log.Print("Created game " + id + ".")
@@ -90,11 +88,29 @@ func (gr *gameRouter) addGame(
 	return gr.prefix + id, nil
 }
 
-func (gr *gameRouter) removeGame(id string) {
+func (gr *gameRouter) PeriodicallyDeleteGamesOlderThan(d time.Duration) {
+	for {
+		time.Sleep(d)
+		gr.deleteGamesOlderThan(d)
+	}
+}
+
+func (gr *gameRouter) deleteGamesOlderThan(d time.Duration) {
 	gr.mutex.Lock()
 	defer gr.mutex.Unlock()
 
-	if _, ok := gr.games[id]; ok {
-		delete(gr.games, id)
-	}
+  count := 0
+  for id, game := range gr.games {
+    actual := game.DurationSinceCompletion()
+    if actual == nil {
+      continue
+    }
+    if *actual > d {
+      delete(gr.games, id)
+      count++
+    }
+  }
+  if count > 0 {
+    log.Printf("Cleaned up %d completed games.", count)
+  }
 }

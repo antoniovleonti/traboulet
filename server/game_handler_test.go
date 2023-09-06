@@ -38,7 +38,7 @@ func TestNewGameHandler(t *testing.T) {
 
 	gh, err := newGameHandler(
     kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie(), nil)
+    fakeBlackCookie())
   if err != nil {
     t.Error(err)
   }
@@ -50,7 +50,7 @@ func TestNewGameHandler(t *testing.T) {
 func TestGetState(t *testing.T) {
 	gh, err := newGameHandler(
     kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie(), nil)
+    fakeBlackCookie())
   if err != nil {
     t.Fatal(err)
   }
@@ -133,7 +133,7 @@ func postMove(t *testing.T, gh *gameHandler, body []byte,
 func TestPostValidMove(t *testing.T) {
 	gh, err := newGameHandler(
     kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie(), nil)
+    fakeBlackCookie())
   if err != nil {
     t.Fatal(err)
   }
@@ -157,7 +157,7 @@ func TestPostValidMove(t *testing.T) {
 func TestPostInvalidMove(t *testing.T) {
 	gh, err := newGameHandler(
     kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie(), nil)
+    fakeBlackCookie())
   if err != nil {
     t.Fatal(err)
   }
@@ -175,7 +175,7 @@ func TestPostInvalidMove(t *testing.T) {
 func TestPostMoveNoCookie(t *testing.T) {
 	gh, err := newGameHandler(
     kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie(), nil)
+    fakeBlackCookie())
   if err != nil {
     t.Fatal(err)
   }
@@ -199,7 +199,7 @@ func TestPostMoveNoCookie(t *testing.T) {
 func TestPostMoveEmptyBody(t *testing.T) {
 	gh, err := newGameHandler(
     kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie(), nil)
+    fakeBlackCookie())
   if err != nil {
     t.Fatal(err)
   }
