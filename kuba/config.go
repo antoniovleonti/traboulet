@@ -1,8 +1,8 @@
 package kuba
 
 import (
-  "time"
-  "errors"
+	"errors"
+	"time"
 )
 
 type Config struct {
@@ -11,8 +11,8 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-  if c.TimeControl <= 0 || c.TimeControl > time.Hour {
-    return errors.New("time control should be > 0s and <= 1hr")
-  }
-  return nil
+	if c.TimeControl <= 0 || c.TimeControl > time.Hour {
+		return errors.New("time control should be > 0s and <= 1hr")
+	}
+	return nil
 }

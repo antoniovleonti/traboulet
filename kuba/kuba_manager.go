@@ -15,9 +15,9 @@ type User struct {
 type clientViewPlayer struct {
 	TimeNs   int64      `json:"timeNs"`
 	Deadline *time.Time `json:"deadline"`
-  ID string `json:"id"`
-  Color string `json:"color"`
-  Score int `json:"score"`
+	ID       string     `json:"id"`
+	Color    string     `json:"color"`
+	Score    int        `json:"score"`
 }
 
 type ClientView struct {
@@ -29,7 +29,7 @@ type ClientView struct {
 	WinThreshold  int                         `json:"winThreshold"`
 	ClockEnabled  bool                        `json:"clockEnabled"`
 	ColorToPlayer map[string]clientViewPlayer `json:"colorToPlayer"`
-	IDToPlayer map[string]clientViewPlayer `json:"idToPlayer"`
+	IDToPlayer    map[string]clientViewPlayer `json:"idToPlayer"`
 }
 
 // Handles mapping cookie -> color (black / white) & ensuring players only move
@@ -37,7 +37,7 @@ type ClientView struct {
 // correct marble color being moved, has no concept of "who" moved it).
 type KubaManager struct {
 	state        *kubaGame
-	cookieToUser map[string]*User  // "string" key is serialized cookie
+	cookieToUser map[string]*User // "string" key is serialized cookie
 	colorToUser  map[AgentColor]*User
 }
 
@@ -50,12 +50,12 @@ func NewKubaManager(
 	if black == nil {
 		return nil, errors.New("Missing black cookie")
 	}
-  state, err := newKubaGame(config, onAsyncUpdate, onGameOver, 10 * time.Minute)
-  if err != nil {
-    return nil, err
-  }
+	state, err := newKubaGame(config, onAsyncUpdate, onGameOver, 10*time.Minute)
+	if err != nil {
+		return nil, err
+	}
 	km := &KubaManager{
-		state: state,
+		state:        state,
 		cookieToUser: make(map[string]*User),
 		colorToUser:  make(map[AgentColor]*User),
 	}
@@ -110,16 +110,16 @@ func (km KubaManager) GetClientView() ClientView {
 	idToPlayer := make(map[string]clientViewPlayer)
 	for color, user := range km.colorToUser {
 		agent := km.state.agents[color]
-    player := clientViewPlayer{
+		player := clientViewPlayer{
 			TimeNs:   agent.time.Nanoseconds(),
 			Deadline: agent.deadline,
-      Color: color.String(),
-      ID: user.cookie.Name,
-      Score: agent.score,
+			Color:    color.String(),
+			ID:       user.cookie.Name,
+			Score:    agent.score,
 		}
 
 		colorToPlayer[color.String()] = player
-    idToPlayer[user.cookie.Name] = player
+		idToPlayer[user.cookie.Name] = player
 	}
 
 	return ClientView{
@@ -131,7 +131,7 @@ func (km KubaManager) GetClientView() ClientView {
 		WinThreshold:  km.state.winThreshold,
 		ClockEnabled:  km.state.clockEnabled,
 		ColorToPlayer: colorToPlayer,
-		IDToPlayer: idToPlayer,
+		IDToPlayer:    idToPlayer,
 	}
 }
 
@@ -142,5 +142,5 @@ func (km KubaManager) MarshalJSON() ([]byte, error) {
 // This way we don't have to worry about what fields the client is / is not
 // sending. It will always be the same regardless of client / golang behavior.
 func getKeyFromCookie(c *http.Cookie) string {
-  return c.Name + "=" + c.Value
+	return c.Name + "=" + c.Value
 }

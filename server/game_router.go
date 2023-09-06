@@ -3,12 +3,12 @@ package server
 import (
 	"github.com/julienschmidt/httprouter"
 	"kuba"
+	"log"
 	mrand "math/rand"
-  "log"
-  "time"
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 )
 
 type gameRouter struct {
@@ -77,13 +77,13 @@ func (gr *gameRouter) addGame(
 	}
 
 	game, err := newGameHandler(config, cookie1, cookie2)
-  if err != nil {
-    return "", err
-  }
+	if err != nil {
+		return "", err
+	}
 	id := gr.pathGen.newString(8)
-  gr.games[id] = game
+	gr.games[id] = game
 
-  log.Print("Created game " + id + ".")
+	log.Print("Created game " + id + ".")
 
 	return gr.prefix + id, nil
 }
@@ -99,18 +99,18 @@ func (gr *gameRouter) deleteGamesOlderThan(d time.Duration) {
 	gr.mutex.Lock()
 	defer gr.mutex.Unlock()
 
-  count := 0
-  for id, game := range gr.games {
-    actual := game.DurationSinceCompletion()
-    if actual == nil {
-      continue
-    }
-    if *actual > d {
-      delete(gr.games, id)
-      count++
-    }
-  }
-  if count > 0 {
-    log.Printf("Cleaned up %d completed games.", count)
-  }
+	count := 0
+	for id, game := range gr.games {
+		actual := game.DurationSinceCompletion()
+		if actual == nil {
+			continue
+		}
+		if *actual > d {
+			delete(gr.games, id)
+			count++
+		}
+	}
+	if count > 0 {
+		log.Printf("Cleaned up %d completed games.", count)
+	}
 }

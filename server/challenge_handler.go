@@ -28,16 +28,16 @@ type challengeHandler struct {
 }
 
 type challengeHandlerView struct {
-	Config kuba.Config `json:"config"`
-  CreatorID string `json:"creatorID"`
+	Config    kuba.Config `json:"config"`
+	CreatorID string      `json:"creatorID"`
 }
 
 func newChallengeHandler(
 	c *http.Cookie, config kuba.Config,
 	onChallengeAccepted challengeAcceptedCb) (*challengeHandler, error) {
-  if err := config.Validate(); err != nil {
-    return nil, err
-  }
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
 	ch := challengeHandler{
 		router:              httprouter.New(),
 		timestamp:           time.Now(),
@@ -131,7 +131,7 @@ func (ch *challengeHandler) postAccept(
 
 func (ch *challengeHandler) MarshalJSON() ([]byte, error) {
 	return json.Marshal(challengeHandlerView{
-		Config: ch.config,
-    CreatorID: ch.creator.Name,
+		Config:    ch.config,
+		CreatorID: ch.creator.Name,
 	})
 }

@@ -13,14 +13,14 @@ type rootRouter struct {
 	router       *httprouter.Router
 	challengeRtr *challengeRouter
 	gameRtr      *gameRouter
-  nameGen *nonCryptoStringGen
+	nameGen      *nonCryptoStringGen
 }
 
 func NewRootRouter() *rootRouter {
 	rr := rootRouter{
 		router:  httprouter.New(),
 		gameRtr: newGameRouter("/games/"),
-    nameGen: newNonCryptoStringGen(),
+		nameGen: newNonCryptoStringGen(),
 	}
 	rr.challengeRtr = newChallengeRouter("/challenges/", rr.gameRtr.addGame)
 

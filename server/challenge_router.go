@@ -5,8 +5,8 @@ import (
 	"errors"
 	"github.com/julienschmidt/httprouter"
 	"kuba"
+	"log"
 	"net/http"
-  "log"
 	"net/url"
 	"sync"
 	"time"
@@ -99,13 +99,13 @@ func (cr *challengeRouter) postChallenge(
 		return cr.onChallengeAccepted(path, c, c1, c2)
 	}
 	challenge, err := newChallengeHandler(cookie, config, bind)
-  if err != nil {
-    http.Error(w, err.Error(), http.StatusBadRequest)
-    return
-  }
-  cr.challenges[path] = challenge
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	cr.challenges[path] = challenge
 
-  log.Print("Created challenge " + path + ".")
+	log.Print("Created challenge " + path + ".")
 
 	w.Header().Add("Location", cr.prefix+path)
 	w.WriteHeader(http.StatusSeeOther)
@@ -155,14 +155,14 @@ func (cr *challengeRouter) deleteChallengesOlderThan(d time.Duration) {
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
 
-  count := 0
+	count := 0
 	for k, challenge := range cr.challenges {
 		if time.Since(challenge.timestamp) > d {
 			delete(cr.challenges, k)
-      count++
+			count++
 		}
 	}
-  if count > 0 {
-    log.Printf("Cleaned up %d challenge(s).", count)
-  }
+	if count > 0 {
+		log.Printf("Cleaned up %d challenge(s).", count)
+	}
 }

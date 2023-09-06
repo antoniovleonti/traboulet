@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-  "time"
+	"time"
 )
 
 func TestNewGameRouter(t *testing.T) {
@@ -21,11 +21,11 @@ func TestAddGame(t *testing.T) {
 	gr := newGameRouter("/")
 
 	_, err := gr.addGame(
-    kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie())
-  if err != nil {
-    t.Error(err)
-  }
+		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+	if err != nil {
+		t.Error(err)
+	}
 
 	if len(gr.games) != 1 {
 		t.Error("expected number of games to equal 1")
@@ -36,12 +36,12 @@ func TestHandleGameRequestForwarding(t *testing.T) {
 	gr := newGameRouter("/")
 
 	game, err := newGameHandler(
-    kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie())
-  if err != nil {
-    t.Fatal(err)
-  }
-  gr.games["testpath"] = game
+		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+	if err != nil {
+		t.Fatal(err)
+	}
+	gr.games["testpath"] = game
 
 	// This should trigger the above callback
 	req, err := http.NewRequest("GET", "/testpath/state", nil)
@@ -60,11 +60,11 @@ func TestHandleGameRequestForwarding(t *testing.T) {
 
 func TestDeleteGamesOlderThan(t *testing.T) {
 	gr := newGameRouter("/")
-  tTooOld := time.Now().Add(-1 * time.Hour)
+	tTooOld := time.Now().Add(-1 * time.Hour)
 	gr.games["too old"] = &gameHandler{
 		completionTime: &tTooOld,
 	}
-  tNotTooOld := time.Now().Add(-1 * time.Minute)
+	tNotTooOld := time.Now().Add(-1 * time.Minute)
 	gr.games["not too old"] = &gameHandler{
 		completionTime: &tNotTooOld,
 	}

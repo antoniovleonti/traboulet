@@ -1,16 +1,16 @@
 package server
 
 import (
-  "log"
 	"bytes"
-	"github.com/r3labs/sse/v2"
 	"encoding/json"
+	"github.com/r3labs/sse/v2"
 	"kuba"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
-  "time"
+	"time"
 	// "fmt"
 )
 
@@ -37,11 +37,11 @@ func TestNewGameHandler(t *testing.T) {
 	var _ http.Handler = (*gameHandler)(nil)
 
 	gh, err := newGameHandler(
-    kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie())
-  if err != nil {
-    t.Error(err)
-  }
+		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+	if err != nil {
+		t.Error(err)
+	}
 	if gh == nil {
 		t.Error("game handler is nil")
 	}
@@ -49,11 +49,11 @@ func TestNewGameHandler(t *testing.T) {
 
 func TestGetState(t *testing.T) {
 	gh, err := newGameHandler(
-    kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie())
-  if err != nil {
-    t.Fatal(err)
-  }
+		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if gh == nil {
 		t.Error("game handler is nil")
 	}
@@ -91,27 +91,27 @@ func postMove(t *testing.T, gh *gameHandler, body []byte,
 		postMoveReq.AddCookie(c)
 	}
 
-  msgsReceived := 0
-  done := make(chan struct{})
-  handleUpdate := func(msg *sse.Event) {
-    msgsReceived++
-    log.Print(string(msg.Data))
-    log.Print("sending done signal")
-    done <- struct{}{}
-  }
-  updateClient := sse.NewClient(url + "/state-stream")
-  go func() {
-    err = updateClient.SubscribeRaw(handleUpdate)
-    if err != nil {
-      t.Error(err)
-    }
-  }()
-  // Wait for the subscriber to get registered
-  time.Sleep(2 * time.Millisecond)
+	msgsReceived := 0
+	done := make(chan struct{})
+	handleUpdate := func(msg *sse.Event) {
+		msgsReceived++
+		log.Print(string(msg.Data))
+		log.Print("sending done signal")
+		done <- struct{}{}
+	}
+	updateClient := sse.NewClient(url + "/state-stream")
+	go func() {
+		err = updateClient.SubscribeRaw(handleUpdate)
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+	// Wait for the subscriber to get registered
+	time.Sleep(2 * time.Millisecond)
 	// Run the request through our handler
 	postMoveResp := httptest.NewRecorder()
 	gh.ServeHTTP(postMoveResp, postMoveReq)
-  time.Sleep(time.Millisecond)
+	time.Sleep(time.Millisecond)
 
 	// Check the response body is what we expect.
 	if postMoveResp.Code != expectedStatus {
@@ -122,8 +122,8 @@ func postMove(t *testing.T, gh *gameHandler, body []byte,
 
 	// Check we recieved a game update
 	if expectedStatus == http.StatusOK {
-    log.Print("awaiting done signal")
-    <-done
+		log.Print("awaiting done signal")
+		<-done
 		if msgsReceived != 1 {
 			t.Error("expected subscriber to receive exactly one message")
 		}
@@ -132,17 +132,17 @@ func postMove(t *testing.T, gh *gameHandler, body []byte,
 
 func TestPostValidMove(t *testing.T) {
 	gh, err := newGameHandler(
-    kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie())
-  if err != nil {
-    t.Fatal(err)
-  }
+		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if gh == nil {
 		t.Error("game handler is nil")
 	}
 
-  server := httptest.NewServer(gh)
-  url := server.URL
+	server := httptest.NewServer(gh)
+	url := server.URL
 
 	// Create the body
 	move := kuba.Move{X: 0, Y: 0, D: kuba.DirRight}
@@ -156,17 +156,17 @@ func TestPostValidMove(t *testing.T) {
 
 func TestPostInvalidMove(t *testing.T) {
 	gh, err := newGameHandler(
-    kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie())
-  if err != nil {
-    t.Fatal(err)
-  }
+		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if gh == nil {
 		t.Error("game handler is nil")
 	}
 
-  server := httptest.NewServer(gh)
-  url := server.URL
+	server := httptest.NewServer(gh)
+	url := server.URL
 
 	postMove(t, gh, []byte("blah"), []*http.Cookie{gh.km.GetWhiteCookie()},
 		http.StatusBadRequest, url)
@@ -174,17 +174,17 @@ func TestPostInvalidMove(t *testing.T) {
 
 func TestPostMoveNoCookie(t *testing.T) {
 	gh, err := newGameHandler(
-    kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie())
-  if err != nil {
-    t.Fatal(err)
-  }
+		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if gh == nil {
 		t.Error("game handler is nil")
 	}
 
-  server := httptest.NewServer(gh)
-  url := server.URL
+	server := httptest.NewServer(gh)
+	url := server.URL
 
 	// Create the body
 	move := kuba.Move{X: 0, Y: 0, D: kuba.DirRight}
@@ -198,17 +198,17 @@ func TestPostMoveNoCookie(t *testing.T) {
 
 func TestPostMoveEmptyBody(t *testing.T) {
 	gh, err := newGameHandler(
-    kuba.Config{TimeControl: 1*time.Minute}, fakeWhiteCookie(),
-    fakeBlackCookie())
-  if err != nil {
-    t.Fatal(err)
-  }
+		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if gh == nil {
 		t.Error("game handler is nil")
 	}
 
-  server := httptest.NewServer(gh)
-  url := server.URL
+	server := httptest.NewServer(gh)
+	url := server.URL
 
 	postMove(t, gh, []byte(""), []*http.Cookie{gh.km.GetWhiteCookie()},
 		http.StatusBadRequest, url)

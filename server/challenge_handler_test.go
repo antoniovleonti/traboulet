@@ -18,10 +18,10 @@ func TestNewChallengeHandler(t *testing.T) {
 	}
 
 	ch, err :=
-    newChallengeHandler(fakeWhiteCookie(), kuba.Config{time.Minute}, cb)
-  if err != nil {
-    t.Error(err)
-  }
+		newChallengeHandler(fakeWhiteCookie(), kuba.Config{time.Minute}, cb)
+	if err != nil {
+		t.Error(err)
+	}
 	if ch == nil {
 		t.Error("nil challenge handler")
 	}
@@ -44,9 +44,9 @@ func TestPostJoinValid(t *testing.T) {
 	}
 
 	ch, err := newChallengeHandler(white, kuba.Config{time.Minute}, cb)
-  if err != nil {
-    t.Error(err)
-  }
+	if err != nil {
+		t.Error(err)
+	}
 	if ch == nil {
 		t.Error("nil challenge handler")
 	}
@@ -65,7 +65,7 @@ func TestPostJoinValid(t *testing.T) {
 	}
 	getUpdateResp := httptest.NewRecorder()
 	go ch.ServeHTTP(getUpdateResp, getUpdateReq)
-  time.Sleep(time.Millisecond)
+	time.Sleep(time.Millisecond)
 
 	// Run the request through our handler
 	postJoinResp := httptest.NewRecorder()
@@ -91,9 +91,9 @@ func TestPostJoinNoCookie(t *testing.T) {
 	}
 
 	ch, err := newChallengeHandler(white, kuba.Config{time.Minute}, cb)
-  if err != nil {
-    t.Error(err)
-  }
+	if err != nil {
+		t.Error(err)
+	}
 	if ch == nil {
 		t.Error("nil challenge handler")
 	}
@@ -128,9 +128,9 @@ func TestPostJoinSameCookie(t *testing.T) {
 	}
 
 	ch, err := newChallengeHandler(white, kuba.Config{time.Minute}, cb)
-  if err != nil {
-    t.Error(err)
-  }
+	if err != nil {
+		t.Error(err)
+	}
 	if ch == nil {
 		t.Error("nil challenge handler")
 	}
@@ -167,9 +167,9 @@ func TestPostJoinAgain(t *testing.T) {
 	}
 
 	ch, err := newChallengeHandler(white, kuba.Config{time.Minute}, cb)
-  if err != nil {
-    t.Error(err)
-  }
+	if err != nil {
+		t.Error(err)
+	}
 	if ch == nil {
 		t.Error("nil challenge handler")
 	}
@@ -241,7 +241,7 @@ func TestIntegrationWithGameRouter(t *testing.T) {
 
 	// accept challenge
 	joinChallengeReq, err :=
-    http.NewRequest("POST", "/"+challengeID+"/accept", nil)
+		http.NewRequest("POST", "/"+challengeID+"/accept", nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -276,11 +276,11 @@ func TestIntegrationWithGameRouter(t *testing.T) {
 
 func TestInvalidConfig(t *testing.T) {
 	ch, err :=
-    newChallengeHandler(fakeWhiteCookie(), kuba.Config{TimeControl:0}, nil)
-  if err == nil {
-    t.Error("shouldn't be able to make a game with zero time")
-  }
-  if ch != nil {
-    t.Errorf("challenge handler should be nil")
-  }
+		newChallengeHandler(fakeWhiteCookie(), kuba.Config{TimeControl: 0}, nil)
+	if err == nil {
+		t.Error("shouldn't be able to make a game with zero time")
+	}
+	if ch != nil {
+		t.Errorf("challenge handler should be nil")
+	}
 }

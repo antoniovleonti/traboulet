@@ -2,24 +2,24 @@ package server
 
 import (
 	"encoding/json"
+	"github.com/antoniovleonti/sse"
 	"github.com/julienschmidt/httprouter"
-  "github.com/antoniovleonti/sse"
 	"kuba"
-  "time"
-  "log"
+	"log"
 	"net/http"
-  "sync"
+	"sync"
+	"time"
 )
 
 // Handles requests for endpoints related to a particular game. Is not aware
 // that any other games exist (accepts requests for endpoints like "/state/").
 // This allows for things like writing a single-game server for testing.
 type gameHandler struct {
-	km     *kuba.KubaManager
-	router *httprouter.Router
-	pub    publisher
-  completionTime *time.Time
-  timeMutex sync.Mutex
+	km             *kuba.KubaManager
+	router         *httprouter.Router
+	pub            publisher
+	completionTime *time.Time
+	timeMutex      sync.Mutex
 }
 
 func newGameHandler(
@@ -30,10 +30,10 @@ func newGameHandler(
 	}
 	km, err :=
 		kuba.NewKubaManager(config, white, black, gh.publishUpdate, gh.markComplete)
-  if err != nil {
-    return nil, err
-  }
-  gh.km = km
+	if err != nil {
+		return nil, err
+	}
+	gh.km = km
 
 	// gh.router.Handler("GET", "/state-stream", gh.pub)
 	gh.router.GET("/state-stream", gh.getStateStream)
@@ -45,20 +45,20 @@ func newGameHandler(
 }
 
 func (gh *gameHandler) publishUpdate() {
-  b, err := json.Marshal(gh.km)
-  if err != nil {
-    panic("couldn't marshal game state")
-  }
-  event := sse.Event{
-    Data: string(b),
-  }
+	b, err := json.Marshal(gh.km)
+	if err != nil {
+		panic("couldn't marshal game state")
+	}
+	event := sse.Event{
+		Data: string(b),
+	}
 
 	gh.pub.do(func(w http.ResponseWriter) {
 		err := event.Render(w)
-    if err != nil {
-      log.Printf("Error writing event: %v\n", err)
-    }
-  }, false)
+		if err != nil {
+			log.Printf("Error writing event: %v\n", err)
+		}
+	}, false)
 }
 
 // Convenience method
@@ -68,7 +68,7 @@ func (gh *gameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (gh *gameHandler) getStateStream(
 	w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-  gh.pub.subscribe(w, r.Context().Done())
+	gh.pub.subscribe(w, r.Context().Done())
 }
 
 func (gh *gameHandler) getState(
@@ -121,18 +121,18 @@ func (gh *gameHandler) postResignation(
 }
 
 func (gh *gameHandler) markComplete() {
-  gh.timeMutex.Lock()
-  defer gh.timeMutex.Unlock()
-  t := time.Now()
-  gh.completionTime = &t
+	gh.timeMutex.Lock()
+	defer gh.timeMutex.Unlock()
+	t := time.Now()
+	gh.completionTime = &t
 }
 
 func (gh *gameHandler) DurationSinceCompletion() *time.Duration {
-  gh.timeMutex.Lock()
-  defer gh.timeMutex.Unlock()
-  if gh.completionTime == nil {
-    return nil
-  }
-  d := time.Since(*gh.completionTime)
-  return &d
+	gh.timeMutex.Lock()
+	defer gh.timeMutex.Unlock()
+	if gh.completionTime == nil {
+		return nil
+	}
+	d := time.Since(*gh.completionTime)
+	return &d
 }

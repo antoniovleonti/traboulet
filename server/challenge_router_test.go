@@ -56,11 +56,11 @@ func TestHandleChallengeRequestForwarding(t *testing.T) {
 	cr := newChallengeRouter("/", nil)
 
 	challenge, err :=
-    newChallengeHandler(fakeWhiteCookie(), kuba.Config{time.Minute}, nil)
-  if err != nil {
-    t.Error(err)
-  }
-  cr.challenges["testpath"] = challenge
+		newChallengeHandler(fakeWhiteCookie(), kuba.Config{time.Minute}, nil)
+	if err != nil {
+		t.Error(err)
+	}
+	cr.challenges["testpath"] = challenge
 
 	req, err :=
 		http.NewRequest("GET", "/testpath/", nil)
@@ -81,37 +81,37 @@ func TestHandleChallengeRequestForwarding(t *testing.T) {
 func TestGetChallenges(t *testing.T) {
 	cr := newChallengeRouter("/", nil)
 
-  type challengeParams struct {
-    s string
-    cookie *http.Cookie
-    config kuba.Config
-  }
+	type challengeParams struct {
+		s      string
+		cookie *http.Cookie
+		config kuba.Config
+	}
 
-  newChallengeParams := func(
-    s string, cookie *http.Cookie, config kuba.Config) *challengeParams {
-    cp := challengeParams{
-      s: s,
-      cookie: cookie,
-      config: config,
-    }
-    return &cp
-  }
+	newChallengeParams := func(
+		s string, cookie *http.Cookie, config kuba.Config) *challengeParams {
+		cp := challengeParams{
+			s:      s,
+			cookie: cookie,
+			config: config,
+		}
+		return &cp
+	}
 
-  paramsList := []*challengeParams{
-    newChallengeParams("a", fakeWhiteCookie(), kuba.Config{time.Minute}),
-    newChallengeParams(
-      "b", fakeWhiteCookie(), kuba.Config{time.Minute}),
-    newChallengeParams(
-      "c", fakeWhiteCookie(), kuba.Config{time.Hour}),
-  }
+	paramsList := []*challengeParams{
+		newChallengeParams("a", fakeWhiteCookie(), kuba.Config{time.Minute}),
+		newChallengeParams(
+			"b", fakeWhiteCookie(), kuba.Config{time.Minute}),
+		newChallengeParams(
+			"c", fakeWhiteCookie(), kuba.Config{time.Hour}),
+	}
 
-  for _, params := range paramsList {
-    challenge, err := newChallengeHandler(params.cookie, params.config, nil)
-    if err != nil {
-      t.Fatal(err)
-    }
-    cr.challenges[params.s] = challenge
-  }
+	for _, params := range paramsList {
+		challenge, err := newChallengeHandler(params.cookie, params.config, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cr.challenges[params.s] = challenge
+	}
 
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
