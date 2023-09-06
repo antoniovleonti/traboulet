@@ -41,7 +41,7 @@ func newGameHandler(
 	gh.router.POST("/move", gh.postMove)
 	gh.router.POST("/resignation", gh.postResignation)
 
-  go gh.periodicallySendKeepAlive()
+	go gh.periodicallySendKeepAlive()
 
 	return &gh, nil
 }
@@ -52,8 +52,8 @@ func (gh *gameHandler) publishUpdate() {
 		panic("couldn't marshal game state")
 	}
 	event := sse.Event{
-    Event: "state-push",
-		Data: string(b),
+		Event: "state-push",
+		Data:  string(b),
 	}
 
 	gh.pub.do(func(w http.ResponseWriter) {
@@ -65,16 +65,16 @@ func (gh *gameHandler) publishUpdate() {
 }
 
 func (gh *gameHandler) periodicallySendKeepAlive() {
-  for {
-    time.Sleep(1 * time.Minute)
-    gh.sendKeepAlive()
-  }
+	for {
+		time.Sleep(1 * time.Minute)
+		gh.sendKeepAlive()
+	}
 }
 
 func (gh *gameHandler) sendKeepAlive() {
 	event := sse.Event{
-    Event: "keep-alive",
-    Data: "",
+		Event: "keep-alive",
+		Data:  "",
 	}
 
 	gh.pub.do(func(w http.ResponseWriter) {
