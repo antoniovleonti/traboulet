@@ -50,6 +50,7 @@ func (gh *gameHandler) publishUpdate() {
 		panic("couldn't marshal game state")
 	}
 	event := sse.Event{
+    Event: "state-push",
 		Data: string(b),
 	}
 

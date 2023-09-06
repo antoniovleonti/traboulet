@@ -26,11 +26,10 @@ console.log(getURLBase() + "/state-stream");
 const stateStream = new EventSource(getURLBase() + "/state-stream", {
   withCredentials: true,
 });
-stateStream.onmessage = function(e) {
-// stateStream.addEventListener('message', function(e) {
+stateStream.addEventListener('state-push', function(e) {
   console.log("message received");
   update(JSON.parse(e.data));
-};
+});
 stateStream.onerror = function(e) {
   console.log("error");
 };
