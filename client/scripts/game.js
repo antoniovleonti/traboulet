@@ -21,27 +21,17 @@ function getURLBase() {
   return '/api/games/' + gameID;
 }
 
-console.log(getURLBase() + "/state-stream");
-
-const stateStream = new EventSource(getURLBase() + "/state-stream", {
+const stream = new EventSource(getURLBase() + "/event-stream", {
   withCredentials: true,
 });
-stateStream.addEventListener('state-push', function(e) {
-  console.log("message received");
+stream.addEventListener('state-push', function(e) {
   update(JSON.parse(e.data));
 });
-stateStream.onerror = function(e) {
-  console.log("error");
-};
-stateStream.onopen = function(e) {
-  console.log("open");
+stream.onerror = function(e) {
+  console.log(e);
 };
 
-console.log(stateStream);
-
-function enterGameLoop() {
-  let urlParts = window.location.href.split("/");
-  let gameID = urlParts[urlParts.length-1];
+function getStateAndUpdate() {
   fetch(getURLBase() + '/state')
       .then(response => {
         if (response.ok) {
@@ -68,8 +58,6 @@ let moveForm = document.getElementById("move-form");
 
 moveForm.addEventListener("submit", e => {
   e.preventDefault();
-  let urlParts = window.location.href.split("/");
-  let gameID = urlParts[urlParts.length-1];
   let formRaw = Object.fromEntries(new FormData(moveForm));
   let data = JSON.stringify({
     x: parseInt(formRaw.x),
@@ -79,11 +67,6 @@ moveForm.addEventListener("submit", e => {
   fetch(getURLBase() + '/move',
         { method: 'POST', body: data })
       .then(response => {
-        if (response.ok) {
-          response.text().then(txt => {
-            console.log(txt);
-          });
-        }
         if (!response.ok) {
           response.text().then(txt => {
             console.log(`${response.status} ${txt}`);
@@ -92,5 +75,4 @@ moveForm.addEventListener("submit", e => {
       });
 });
 
-
-enterGameLoop();
+getStateAndUpdate();

@@ -35,8 +35,7 @@ func newGameHandler(
 	}
 	gh.km = km
 
-	// gh.router.Handler("GET", "/state-stream", gh.pub)
-	gh.router.GET("/state-stream", gh.getStateStream)
+	gh.router.GET("/event-stream", gh.getEventStream)
 	gh.router.GET("/state", gh.getState)
 	gh.router.POST("/move", gh.postMove)
 	gh.router.POST("/resignation", gh.postResignation)
@@ -90,7 +89,7 @@ func (gh *gameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	gh.router.ServeHTTP(w, r)
 }
 
-func (gh *gameHandler) getStateStream(
+func (gh *gameHandler) getEventStream(
 	w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	gh.pub.subscribe(w, r.Context().Done())
 }

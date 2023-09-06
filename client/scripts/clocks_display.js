@@ -71,9 +71,8 @@ class ClocksDisplay {
     const minutesPadded = minutes.toString().padStart(2, '0');
     const secondsPadded = seconds.toString().padStart(2, '0');
 
-    return (hours > 0 ? hoursPadded + "h " : "") +
-           (minutes > 0 ? minutesPadded + "m " : "") +
-           (seconds > 0 ? secondsPadded + "s" : "");
+    return (hours > 0 ? hoursPadded + ":" : "") +
+           minutesPadded + ":" + secondsPadded;
   }
 }
 

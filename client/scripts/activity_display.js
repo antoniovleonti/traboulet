@@ -11,7 +11,6 @@ class ActivityDisplay {
 
   update(whoseTurn, colorToPlayer) {
     let youAreActive = hasCookieWithName(colorToPlayer[whoseTurn].id);
-    console.log(youAreActive);
     this.yourActivity_.hidden = !youAreActive;
     this.otherPlayerActivity_.hidden = youAreActive;
   }
