@@ -81,7 +81,10 @@ func TestGetState(t *testing.T) {
 }
 
 func postMove(t *testing.T, gh *gameHandler, body []byte,
-	cookies []*http.Cookie, expectedStatus int, url string) {
+	cookies []*http.Cookie, expectedStatus int) {
+	server := httptest.NewServer(gh)
+	url := server.URL
+
 	// Build request
 	postMoveReq, err := http.NewRequest("POST", "/move", bytes.NewReader(body))
 	if err != nil {
@@ -99,7 +102,7 @@ func postMove(t *testing.T, gh *gameHandler, body []byte,
 		log.Print("sending done signal")
 		done <- struct{}{}
 	}
-	updateClient := sse.NewClient(url + "/state-stream")
+	updateClient := sse.NewClient(url + "/event-stream")
 	go func() {
 		err = updateClient.SubscribeRaw(handleUpdate)
 		if err != nil {
@@ -141,9 +144,6 @@ func TestPostValidMove(t *testing.T) {
 		t.Error("game handler is nil")
 	}
 
-	server := httptest.NewServer(gh)
-	url := server.URL
-
 	// Create the body
 	move := kuba.Move{X: 0, Y: 0, D: kuba.DirRight}
 	b, err := json.Marshal(move)
@@ -151,7 +151,7 @@ func TestPostValidMove(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	postMove(t, gh, b, []*http.Cookie{gh.km.GetWhiteCookie()}, http.StatusOK, url)
+	postMove(t, gh, b, []*http.Cookie{gh.km.GetWhiteCookie()}, http.StatusOK)
 }
 
 func TestPostInvalidMove(t *testing.T) {
@@ -165,11 +165,8 @@ func TestPostInvalidMove(t *testing.T) {
 		t.Error("game handler is nil")
 	}
 
-	server := httptest.NewServer(gh)
-	url := server.URL
-
 	postMove(t, gh, []byte("blah"), []*http.Cookie{gh.km.GetWhiteCookie()},
-		http.StatusBadRequest, url)
+		http.StatusBadRequest)
 }
 
 func TestPostMoveNoCookie(t *testing.T) {
@@ -183,9 +180,6 @@ func TestPostMoveNoCookie(t *testing.T) {
 		t.Error("game handler is nil")
 	}
 
-	server := httptest.NewServer(gh)
-	url := server.URL
-
 	// Create the body
 	move := kuba.Move{X: 0, Y: 0, D: kuba.DirRight}
 	b, err := json.Marshal(move)
@@ -193,7 +187,7 @@ func TestPostMoveNoCookie(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	postMove(t, gh, b, []*http.Cookie{}, http.StatusUnauthorized, url)
+	postMove(t, gh, b, []*http.Cookie{}, http.StatusUnauthorized)
 }
 
 func TestPostMoveEmptyBody(t *testing.T) {
@@ -207,9 +201,50 @@ func TestPostMoveEmptyBody(t *testing.T) {
 		t.Error("game handler is nil")
 	}
 
+	postMove(t, gh, []byte(""), []*http.Cookie{gh.km.GetWhiteCookie()},
+		http.StatusBadRequest)
+}
+
+func TestSendKeepAlive(t *testing.T) {
+	gh, err := newGameHandler(
+		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+	if err != nil {
+		t.Fatal(err)
+	}
 	server := httptest.NewServer(gh)
 	url := server.URL
 
-	postMove(t, gh, []byte(""), []*http.Cookie{gh.km.GetWhiteCookie()},
-		http.StatusBadRequest, url)
+	msgsReceived := 0
+	done := make(chan struct{})
+	handleUpdate := func(msg *sse.Event) {
+		msgsReceived++
+		if string(msg.Event) != "keep-alive" {
+			t.Errorf("Expected msg.Event == \"keep-alive\"; got %q", msg.Event)
+		}
+		log.Print("Sending done signal.")
+		done <- struct{}{}
+	}
+	updateClient := sse.NewClient(url + "/event-stream")
+	go func() {
+		err = updateClient.SubscribeRaw(handleUpdate)
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+
+	log.Print("Waiting for subscriber to be ready.")
+	for {
+		if gh.pub.subscribers.Len() != 0 {
+			break
+		}
+		time.Sleep(1 * time.Millisecond)
+	}
+
+	gh.sendKeepAlive()
+	log.Print("Waiting on done signal.")
+	<-done
+	if msgsReceived != 1 {
+		t.Error("expected 1 message")
+	}
 }
