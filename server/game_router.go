@@ -112,6 +112,6 @@ func (gr *gameRouter) deleteGamesOlderThan(d time.Duration) {
 	}
 	if count > 0 {
 		log.Printf(
-      "Cleaned up %d completed games (%d games remain).", count, len(gr.games))
+			"Cleaned up %d completed games (%d games remain).", count, len(gr.games))
 	}
 }
