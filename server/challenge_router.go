@@ -163,6 +163,8 @@ func (cr *challengeRouter) deleteChallengesOlderThan(d time.Duration) {
 		}
 	}
 	if count > 0 {
-		log.Printf("Cleaned up %d challenge(s).", count)
+		log.Printf(
+      "Cleaned up %d challenge(s) (%d challenges remain)",
+      count, len(cr.challenges))
 	}
 }
