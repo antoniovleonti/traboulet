@@ -12,11 +12,15 @@
 <h1>Traboulet</h1>
 <h2>Game page</h2>
 
-This page will be shitty until I write something better.
+<div id=error>
+<h3>Error</h3>
+Game doesn't exist or the server is down.
+</div>
 
+<div id=content hidden>
 <h3>Play</h3>
 
-Status: <code id=status>game not found</code>
+Status: <code id=status>PLACEHOLDER</code>
 
 <div class=pure-g>
 
@@ -38,16 +42,18 @@ Status: <code id=status>game not found</code>
 </div>
 
 <div class=pure-u-1-2>
-<h4>
-Other player (<code id=other-player-color>-----</code>)
-<span id=other-player-activity hidden>***</span>
-</h4>
+<h4>Players</h4>
+<h5>
+<span id=other-player-activity hidden>>>></span>
+<code id=other-player-color>-----</code>
+</h5>
 Time: <code id=other-player-clock></code><br>
 Score: <code id=other-player-score></code><br>
-<h4>
-You (<code id=your-color>-----</code>)
-<span id=your-activity hidden>***</span>
-</h4>
+<h5>
+<span id=your-activity hidden>>>></span>
+<code id=your-color>-----</code>
+<span id=you-indicator hidden>(you)</span>
+</h5>
 Time: <code id=your-clock></code><br>
 Score: <code id=your-score></code><br>
 </div>
@@ -88,13 +94,13 @@ Score: <code id=your-score></code><br>
 </form>
 <h5>Resign</h5>
 <button type=button class="pure-button">Resign</button>
+</div>
 
 </body>
 
-<script src='/scripts/activity_display.js'></script>
-<script src='/scripts/color_display.js'></script>
-<script src='/scripts/score_display.js'></script>
-<script src='/scripts/clocks_display.js'></script>
+<script src='/scripts/clock_display.js'></script>
+<script src='/scripts/player_display.js'></script>
+<script src='/scripts/player_display_manager.js'></script>
 <script src='/scripts/board_display.js'></script>
 <script src='/scripts/status_display.js'></script>
 <script src='/scripts/game.js'></script>

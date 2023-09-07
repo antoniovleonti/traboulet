@@ -2,18 +2,21 @@
 
 let boardDisplay = new BoardDisplay(document.getElementById("board"));
 let statusDisplay = new StatusDisplay(document.getElementById("status"));
-let clocksDisplay = new ClocksDisplay(
-    document.getElementById("your-clock"),
-    document.getElementById("other-player-clock"));
-let scoreDisplay = new ScoreDisplay(
-    document.getElementById("your-score"),
-    document.getElementById("other-player-score"));
-let colorDisplay = new ColorDisplay(
-    document.getElementById("your-color"),
-    document.getElementById("other-player-color"));
-let activityDisplay = new ActivityDisplay(
-    document.getElementById("your-activity"),
-    document.getElementById("other-player-activity"));
+let topPlayer = {
+  clock: document.getElementById("other-player-clock"),
+  color: document.getElementById("other-player-color"),
+  active: document.getElementById("other-player-activity"),
+  score: document.getElementById("other-player-score"),
+  you: null,
+};
+let bottomPlayer = {
+  clock: document.getElementById("your-clock"),
+  color: document.getElementById("your-color"),
+  active: document.getElementById("your-activity"),
+  score: document.getElementById("your-score"),
+  you: document.getElementById("you-indicator"),
+};
+let playerDisplayManager = new PlayerDisplayManager(topPlayer, bottomPlayer);
 
 function getURLBase() {
   let urlParts = window.location.href.split("/");
@@ -39,19 +42,19 @@ function getStateAndUpdate() {
         }
       })
       .then(state => {
-        if (state != null) {
-          update(state);
-        }
+        update(state);
       });
 }
 
 function update(state) {
+  if (state == null) {
+    return
+  }
+  document.getElementById("error").hidden = true
+  document.getElementById("content").hidden = false
   boardDisplay.update(state.board);
   statusDisplay.update(state.status);
-  clocksDisplay.update(state.idToPlayer);
-  scoreDisplay.update(state.idToPlayer);
-  colorDisplay.update(state.idToPlayer);
-  activityDisplay.update(state.whoseTurn, state.colorToPlayer);
+  playerDisplayManager.update(state.idToPlayer, state.colorToPlayer);
 }
 
 let moveForm = document.getElementById("move-form");
