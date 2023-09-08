@@ -1,6 +1,8 @@
 package kuba
 
-import "time"
+import (
+  "time"
+)
 
 type AgentColor int
 
@@ -40,6 +42,9 @@ func (ac AgentColor) winStatus() Status {
 }
 
 func (a *agent) startTurn(timeoutCb func()) bool {
+  if a == nil {
+    return true
+  }
 	if a.timer != nil || a.deadline != nil {
 		return false
 	}
@@ -50,6 +55,9 @@ func (a *agent) startTurn(timeoutCb func()) bool {
 }
 
 func (a *agent) endTurn() bool {
+  if a == nil {
+    return true
+  }
 	if a.timer != nil && !a.timer.Stop() {
 		return false
 	}

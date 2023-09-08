@@ -40,8 +40,8 @@ type kubaGame struct {
 	whoseTurn         AgentColor
 	winThreshold      int
 	status            Status
-	clockEnabled      bool
 	posToCount        map[string]int // string rep of pos -> # of times it's occured.
+  validMoves        []Move
 	firstMoveDeadline *time.Time
 	firstMoveTimer    *time.Timer
 	mutex             sync.RWMutex
@@ -83,7 +83,6 @@ func newKubaGame(
 		board:             startPosition,
 		whoseTurn:         agentWhite,
 		winThreshold:      7,
-		clockEnabled:      config.TimeControl > 0*time.Second,
 		posToCount:        make(map[string]int),
 		firstMoveDeadline: &firstMoveDeadline,
 		onAsyncUpdate:     onAsyncUpdate,
@@ -91,6 +90,8 @@ func newKubaGame(
 	}
 	kg.firstMoveTimer =
 		time.AfterFunc(firstMoveTimeout, kg.firstMoveTimeoutCallback)
+
+  kg.validMoves = kg.getValidMoves()
 
 	return &kg, nil
 }
@@ -162,22 +163,6 @@ func (kg *kubaGame) ValidateMove(move Move) bool {
 	return true
 }
 
-func (kg *kubaGame) validMoveExists() bool {
-	for x := 0; x < kg.boardSize(); x++ {
-		for y := 0; y < kg.boardSize(); y++ {
-			if kg.board[y][x] != kg.whoseTurn.marble() {
-				continue
-			}
-			for _, dir := range []Direction{DirUp, DirDown, DirLeft, DirRight} {
-				if kg.ValidateMove(Move{X: x, Y: y, D: dir}) {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
 func (kg *kubaGame) updateStatus() Status {
 	// Check for preexisting "sticky" status
 	if kg.status != statusOngoing {
@@ -192,7 +177,8 @@ func (kg *kubaGame) updateStatus() Status {
 	}
 
 	// Win by entrapment
-	if !kg.validMoveExists() {
+  kg.validMoves = kg.getValidMoves()
+	if len(kg.validMoves) == 0 {
 		return kg.whoseTurn.otherAgent().winStatus()
 	}
 
@@ -248,7 +234,7 @@ func (kg *kubaGame) ExecuteMove(move Move) bool {
 		kg.firstMoveDeadline = nil
 	}
 
-	if kg.clockEnabled && !kg.agents[kg.whoseTurn].endTurn() {
+	if !kg.agents[kg.whoseTurn].endTurn() {
 		panic("End player turn failed!")
 	}
 
@@ -265,8 +251,7 @@ func (kg *kubaGame) ExecuteMove(move Move) bool {
 
 	kg.status = kg.updateStatus()
 	if kg.status == statusOngoing {
-		if kg.clockEnabled &&
-			!kg.agents[kg.whoseTurn].startTurn(kg.playerTimeoutCallback) {
+		if !kg.agents[kg.whoseTurn].startTurn(kg.playerTimeoutCallback) {
 			panic("startTurn failed!")
 		}
 	} else {
@@ -341,4 +326,22 @@ func (kg *kubaGame) teardown() {
 	for _, a := range kg.agents {
 		a.endTurn()
 	}
+}
+
+func (kg *kubaGame) getValidMoves() []Move {
+  var moves []Move
+	for x := 0; x < kg.boardSize(); x++ {
+		for y := 0; y < kg.boardSize(); y++ {
+			if kg.board[y][x] != kg.whoseTurn.marble() {
+				continue
+			}
+			for _, dir := range []Direction{DirUp, DirDown, DirLeft, DirRight} {
+        move := Move{X: x, Y: y, D: dir}
+				if kg.ValidateMove(move) {
+					moves = append(moves, move)
+				}
+			}
+		}
+	}
+	return moves
 }

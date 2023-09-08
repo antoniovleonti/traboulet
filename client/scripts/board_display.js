@@ -13,15 +13,17 @@ class BoardDisplay {
     }
   }
 
-  update(board) {
+  update(board, validMoves) {
     this.clear();
-    this.el_.appendChild(this.getTextNodeFromBoard(board));
+    this.el_.appendChild(this.getTextNodeFromBoard(board, validMoves));
   }
 
-  getTextNodeFromBoard(board) {
-    let t = "     0 1 2 3 4 5 6\n   +---------------+ x\n";
+  getTextNodeFromBoard(board, validMoves) {
+    let p = document.createElement("span");
+    p.appendChild(document.createTextNode(
+        "     0 1 2 3 4 5 6\n   +---------------+ x\n"));
     for (let i = 0; i < board.length; i++) {
-      t += " " + i + " | ";
+      p.appendChild(document.createTextNode(" " + i + " | "));
       for (let j = 0; j < board[i].length; j++) {
         let c;
         switch (board[i][j]) {
@@ -35,11 +37,29 @@ class BoardDisplay {
             c = board[i][j];
             break;
         }
-        t += c + " ";
+
+        let hasValidMove = false;
+        for (const move of validMoves) {
+          if (j == move.x && i == move.y) {
+            hasValidMove = true;
+            break;
+          }
+        }
+        let el;
+        if (hasValidMove) {
+          el = document.createElement("a");
+          el.addEventListener("click", el => {
+            console.log("click ", j, ", ", i);
+          }, false);
+          el.appendChild(document.createTextNode(c + " "));
+          p.appendChild(el);
+        } else {
+          p.appendChild(document.createTextNode(c + " "));
+        }
       }
-      t += "|\n";
+      p.appendChild(document.createTextNode("|\n"));
     }
-    t += "   +---------------+\n   y";
-    return document.createTextNode(t);
+    p.appendChild(document.createTextNode("   +---------------+\n   y"));
+    return p;
   }
 }

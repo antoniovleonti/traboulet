@@ -23,13 +23,13 @@ type clientViewPlayer struct {
 type ClientView struct {
 	Board         BoardT                      `json:"board"`
 	Status        string                      `json:"status"`
-	Ko            *Move                       `json:"ko"`
 	LastMove      *LastMoveT                  `json:"lastMove"`
 	WhoseTurn     string                      `json:"whoseTurn"` // color of current player
 	WinThreshold  int                         `json:"winThreshold"`
-	ClockEnabled  bool                        `json:"clockEnabled"`
 	ColorToPlayer map[string]clientViewPlayer `json:"colorToPlayer"`
 	IDToPlayer    map[string]clientViewPlayer `json:"idToPlayer"`
+  ValidMoves []Move `json:"validMoves"`
+  FirstMoveDeadline *time.Time `json:"firstMoveDeadline"`
 }
 
 // Handles mapping cookie -> color (black / white) & ensuring players only move
@@ -125,13 +125,13 @@ func (km KubaManager) GetClientView() ClientView {
 	return ClientView{
 		Board:         km.state.board,
 		Status:        km.state.status.String(),
-		Ko:            km.state.ko,
 		LastMove:      km.state.lastMove,
 		WhoseTurn:     km.state.whoseTurn.String(),
 		WinThreshold:  km.state.winThreshold,
-		ClockEnabled:  km.state.clockEnabled,
 		ColorToPlayer: colorToPlayer,
 		IDToPlayer:    idToPlayer,
+    ValidMoves: km.state.validMoves,
+    FirstMoveDeadline: km.state.firstMoveDeadline,
 	}
 }
 

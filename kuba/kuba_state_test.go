@@ -7,26 +7,13 @@ import (
 )
 
 func TestCreateDefaultKubaState(t *testing.T) {
-	kubaWOClock, err := newKubaGame(
-		Config{TimeControl: time.Minute}, nil, nil, 30*time.Second)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if kubaWOClock == nil {
-		t.Error("var kuba should not be nil")
-	}
-
 	kubaWClock, err := newKubaGame(
 		Config{TimeControl: 60 * time.Second}, nil, nil, 30*time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if kubaWOClock == nil {
+	if kubaWClock == nil {
 		t.Error("var kuba should not be nil")
-	}
-
-	if !kubaWClock.clockEnabled {
-		t.Error("clock should be enabled")
 	}
 }
 

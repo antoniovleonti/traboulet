@@ -4,6 +4,8 @@ let boardDisplay = new BoardDisplay(document.getElementById("board"));
 let statusDisplay = new StatusDisplay(document.getElementById("status"));
 let topPlayer = {
   clock: document.getElementById("other-player-clock"),
+  firstMoveIndicator:
+      document.getElementById("other-player-first-move-indicator"),
   color: document.getElementById("other-player-color"),
   active: document.getElementById("other-player-activity"),
   score: document.getElementById("other-player-score"),
@@ -11,6 +13,8 @@ let topPlayer = {
 };
 let bottomPlayer = {
   clock: document.getElementById("your-clock"),
+  firstMoveIndicator:
+      document.getElementById("your-first-move-indicator"),
   color: document.getElementById("your-color"),
   active: document.getElementById("your-activity"),
   score: document.getElementById("your-score"),
@@ -34,6 +38,7 @@ stream.onerror = function(e) {
   console.log(e);
 };
 
+var validMoves = null;
 function getStateAndUpdate() {
   fetch(getURLBase() + '/state')
       .then(response => {
@@ -50,23 +55,37 @@ function update(state) {
   if (state == null) {
     return
   }
+  console.log("state: ", state);
   document.getElementById("error").hidden = true
   document.getElementById("content").hidden = false
-  boardDisplay.update(state.board);
+  boardDisplay.update(state.board, state.validMoves);
   statusDisplay.update(state.status);
-  playerDisplayManager.update(state.idToPlayer, state.colorToPlayer);
+  playerDisplayManager.update(state.idToPlayer, state.colorToPlayer,
+                              state.whoseTurn, state.firstMoveDeadline);
+  validMoves = state.validMoves;
 }
 
 let moveForm = document.getElementById("move-form");
-
 moveForm.addEventListener("submit", e => {
   e.preventDefault();
   let formRaw = Object.fromEntries(new FormData(moveForm));
-  let data = JSON.stringify({
+  let move = {
     x: parseInt(formRaw.x),
     y: parseInt(formRaw.y),
     d: formRaw.d,
-  });
+  };
+  let isValid = false;
+  for (const m of validMoves) {
+    if (move.x == m.x && move.y == m.y && move.d == m.d) {
+      isValid = true;
+      break;
+    }
+  }
+  if (validMoves == null || !isValid) {
+    console.error("move ", move, "was not in list of valid moves");
+    return;
+  }
+  let data = JSON.stringify(move);
   fetch(getURLBase() + '/move',
         { method: 'POST', body: data })
       .then(response => {

@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"testing"
 	"time"
-	// "fmt"
 )
 
 func fakeWhiteCookie() *http.Cookie {
@@ -29,8 +28,8 @@ func fakeBlackCookie() *http.Cookie {
 
 func TestNewKubaManager(t *testing.T) {
 	km, err := NewKubaManager(
-		Config{TimeControl: time.Minute}, fakeWhiteCookie(), fakeBlackCookie(), nil,
-		nil)
+		Config{TimeControl: time.Minute}, fakeWhiteCookie(), fakeBlackCookie(),
+    nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +50,8 @@ func TestNewKubaManager(t *testing.T) {
 
 func TestTryMove(t *testing.T) {
 	km, err := NewKubaManager(
-		Config{TimeControl: time.Minute}, fakeWhiteCookie(), fakeBlackCookie(), nil, nil)
+		Config{TimeControl: time.Minute}, fakeWhiteCookie(), fakeBlackCookie(),
+    nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,6 +83,7 @@ func TestMarshalJSON(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+  km.state.updateStatus()
 	b, err := json.Marshal(km)
 	if err != nil {
 		t.Errorf("marshal json error: %s", err.Error())
