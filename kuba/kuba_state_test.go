@@ -101,6 +101,30 @@ func TestValidateMove(t *testing.T) {
 	}
 }
 
+func TestCantPushOffEdge(t *testing.T) {
+	// shorter names
+	var B, W, R, x Marble = marbleBlack, marbleWhite, marbleRed, marbleNil
+
+	kuba := kubaGame{
+		board: [][]Marble{
+			{x, W, x, B, x, x, x},
+			{x, x, R, x, W, x, B},
+			{x, W, x, x, B, R, R},
+			{R, x, x, x, x, x, x},
+			{x, x, R, x, R, x, x},
+			{W, x, x, x, R, x, x},
+			{B, B, x, x, x, W, W},
+		},
+		winThreshold: 7,
+		whoseTurn:    agentBlack,
+		posToCount:   make(map[string]int),
+	}
+
+  if kuba.ValidateMove(Move{X: 1, Y: 6, D: DirLeft}) {
+    t.Error("Could push own marble off")
+  }
+}
+
 func TestExecuteMove(t *testing.T) {
 	kuba, err := newKubaGame(
 		Config{TimeControl: 500 * time.Millisecond}, nil, nil, 30*time.Second)

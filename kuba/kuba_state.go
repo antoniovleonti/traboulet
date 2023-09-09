@@ -155,7 +155,7 @@ func (kg *kubaGame) ValidateMove(move Move) bool {
 		// Move back one step to the last valid position
 		y -= move.dy()
 		x -= move.dx()
-		if kg.board[x][y] == kg.whoseTurn.marble() {
+		if kg.board[y][x] == kg.whoseTurn.marble() {
 			return false
 		}
 	}

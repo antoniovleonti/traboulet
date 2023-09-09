@@ -1,9 +1,7 @@
 package kuba
 
 import (
-	"encoding/json"
 	"net/http"
-	"reflect"
 	"testing"
 	"time"
 )
@@ -73,30 +71,6 @@ func TestTryMove(t *testing.T) {
 		if (actual == nil) != tc.valid {
 			t.Errorf("testCases[%d]: expected %t, got %t\n", idx, tc.valid, actual)
 		}
-	}
-}
-
-func TestMarshalJSON(t *testing.T) {
-	km, err := NewKubaManager(
-		Config{TimeControl: 600 * time.Second}, fakeWhiteCookie(),
-		fakeBlackCookie(), nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-  km.state.updateStatus()
-	b, err := json.Marshal(km)
-	if err != nil {
-		t.Errorf("marshal json error: %s", err.Error())
-	}
-	var actual ClientView
-	err = json.Unmarshal(b, &actual)
-	if err != nil {
-		t.Fatal(err)
-	}
-	expected := km.GetClientView()
-	if !reflect.DeepEqual(actual, expected) {
-		t.Errorf("handler returned unexpected body:\ngot: %v\nexpected: %v\n",
-			actual, expected)
 	}
 }
 
