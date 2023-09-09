@@ -38,7 +38,6 @@ stream.onerror = function(e) {
   console.log(e);
 };
 
-var validMoves = null;
 function getStateAndUpdate() {
   fetch(getURLBase() + '/state')
       .then(response => {
@@ -58,43 +57,16 @@ function update(state) {
   console.log("state: ", state);
   document.getElementById("error").hidden = true
   document.getElementById("content").hidden = false
-  boardDisplay.update(state.board, state.validMoves);
   statusDisplay.update(state.status);
   playerDisplayManager.update(state.idToPlayer, state.colorToPlayer,
                               state.whoseTurn, state.firstMoveDeadline);
-  validMoves = state.validMoves;
-}
 
-let moveForm = document.getElementById("move-form");
-moveForm.addEventListener("submit", e => {
-  e.preventDefault();
-  let formRaw = Object.fromEntries(new FormData(moveForm));
-  let move = {
-    x: parseInt(formRaw.x),
-    y: parseInt(formRaw.y),
-    d: formRaw.d,
-  };
-  let isValid = false;
-  for (const m of validMoves) {
-    if (move.x == m.x && move.y == m.y && move.d == m.d) {
-      isValid = true;
-      break;
-    }
-  }
-  if (validMoves == null || !isValid) {
-    console.error("move ", move, "was not in list of valid moves");
-    return;
-  }
-  let data = JSON.stringify(move);
-  fetch(getURLBase() + '/move',
-        { method: 'POST', body: data })
-      .then(response => {
-        if (!response.ok) {
-          response.text().then(txt => {
-            console.log(`${response.status} ${txt}`);
-          });
-        }
-      });
-});
+  const myID = PlayerDisplayManager.getMyID(Object.keys(state.idToPlayer));
+  console.log(myID);
+  const isYourTurn = ((myID != null) &&
+                      (state.idToPlayer[myID].color == state.whoseTurn));
+  console.log(isYourTurn);
+  boardDisplay.update(state.board, state.validMoves, isYourTurn);
+}
 
 getStateAndUpdate();

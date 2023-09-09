@@ -1,0 +1,23 @@
+a:hover{
+ cursor: pointer;
+}
+
+a{
+ text-decoration: underline;
+ font-weight: bold;
+}
+
+.select-marble {
+  background: lightgrey;
+  color: black;
+}
+
+.cancel-selection {
+  background: lightblue;
+  color: black;
+}
+
+.move-selection {
+  background: black;
+  color: white;
+}

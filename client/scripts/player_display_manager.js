@@ -42,6 +42,7 @@ class PlayerDisplayManager {
   static getMyID(ids) {
     let cookies = document.cookie.split(";");
     for (const id of ids) {
+      console.log(id);
       for (const cookie of cookies) {
         let nameval = cookie.split("=");
         if (nameval[0].trim() == id) {
