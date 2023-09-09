@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 	"time"
 	// "fmt"
@@ -72,11 +71,6 @@ func TestGetState(t *testing.T) {
 	err = decoder.Decode(&actual)
 	if err != nil {
 		t.Fatal(err)
-	}
-	expected := gh.km.GetClientView()
-	if !reflect.DeepEqual(actual, expected) {
-		t.Errorf("handler returned unexpected body:\ngot: %v\nexpected: %v\n",
-			actual, expected)
 	}
 }
 

@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"kuba"
 	"net/http"
 	"net/http/httptest"
@@ -156,7 +157,7 @@ func TestPostJoinSameCookie(t *testing.T) {
 	}
 }
 
-func TestPostJoinAgain(t *testing.T) {
+func getAcceptedChallenge() (*challengeHandler, error) {
 	white := fakeWhiteCookie()
 	black := fakeBlackCookie()
 
@@ -168,16 +169,16 @@ func TestPostJoinAgain(t *testing.T) {
 
 	ch, err := newChallengeHandler(white, kuba.Config{time.Minute}, cb)
 	if err != nil {
-		t.Error(err)
+		return nil, err
 	}
 	if ch == nil {
-		t.Error("nil challenge handler")
+		errors.New("nil challenge handler")
 	}
 
 	// Build request
 	postJoinReq, err := http.NewRequest("POST", "/accept", nil)
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
 	postJoinReq.AddCookie(black)
 
@@ -186,16 +187,50 @@ func TestPostJoinAgain(t *testing.T) {
 	ch.ServeHTTP(postJoinResp, postJoinReq)
 
 	if !callbackCalled {
-		t.Error("callback was never called")
+		return nil, errors.New("callback was never called")
+	}
+
+	return ch, nil
+}
+
+func TestPostJoinAgain(t *testing.T) {
+	ch, err := getAcceptedChallenge()
+	if err != nil {
+		t.Error(err)
 	}
 
 	// just do it again
-	postJoinResp2 := httptest.NewRecorder()
-	ch.ServeHTTP(postJoinResp2, postJoinReq)
+	postJoinReq, err := http.NewRequest("POST", "/accept", nil)
+	if err != nil {
+		t.Error(err)
+	}
+	postJoinReq.AddCookie(fakeBlackCookie())
+	postJoinResp := httptest.NewRecorder()
+	ch.ServeHTTP(postJoinResp, postJoinReq)
 
-	if postJoinResp2.Code != http.StatusInternalServerError {
+	if postJoinResp.Code != http.StatusSeeOther {
 		t.Errorf("update resp code (%d) did not match expectation (%d)",
-			postJoinResp2.Code, http.StatusInternalServerError)
+			postJoinResp.Code, http.StatusInternalServerError)
+	}
+}
+
+func TestGetStateAfterAccepted(t *testing.T) {
+	ch, err := getAcceptedChallenge()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// just do it again
+	getStateReq, err := http.NewRequest("GET", "/state", nil)
+	if err != nil {
+		t.Error(err)
+	}
+	getStateResp := httptest.NewRecorder()
+	ch.ServeHTTP(getStateResp, getStateReq)
+
+	if getStateResp.Code != http.StatusSeeOther {
+		t.Errorf("update resp code (%d) did not match expectation (%d)",
+			getStateResp.Code, http.StatusInternalServerError)
 	}
 }
 

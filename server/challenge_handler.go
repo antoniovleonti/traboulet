@@ -23,8 +23,9 @@ type challengeHandler struct {
 	config              kuba.Config
 	pub                 publisher
 	onChallengeAccepted challengeAcceptedCb
-	accepted            bool
 	mutex               sync.RWMutex
+	accepted            bool
+	gamePath            *string
 }
 
 type challengeHandlerView struct {
@@ -56,6 +57,22 @@ func newChallengeHandler(
 }
 
 func (ch *challengeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ch.redirectToGameOrRoute(w, r)
+}
+
+func (ch *challengeHandler) redirectToGameOrRoute(
+	w http.ResponseWriter, r *http.Request) {
+	ch.mutex.RLock()
+	if ch.accepted && ch.gamePath != nil {
+		w.Header().Add("Location", *ch.gamePath)
+		w.WriteHeader(http.StatusSeeOther)
+		w.Write([]byte(
+			"Game has started; check header Location field for game path."))
+
+		ch.mutex.RUnlock()
+		return
+	}
+	ch.mutex.RUnlock()
 	ch.router.ServeHTTP(w, r)
 }
 
@@ -113,8 +130,8 @@ func (ch *challengeHandler) postAccept(
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	ch.accepted = true
+	ch.gamePath = &gamePath
 
 	w.Header().Add("Location", gamePath)
 	w.WriteHeader(http.StatusSeeOther)
