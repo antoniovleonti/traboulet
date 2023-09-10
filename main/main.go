@@ -9,5 +9,5 @@ import (
 func main() {
 	router := server.NewRootRouter()
 	log.Print("starting server...")
-	log.Fatal(http.ListenAndServe(":9090", router))
+	log.Fatal(http.ListenAndServe(":25565", router))
 }
