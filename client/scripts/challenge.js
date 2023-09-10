@@ -16,9 +16,13 @@ function hasCookieWithName(name) {
 function getChallenge() {
   let urlParts = window.location.href.split("/");
   let challengeID = urlParts[urlParts.length-1];
-  fetch('/api/challenges/' + challengeID)
+  fetch('/api/challenges/' + challengeID,
+        { method: 'GET', redirect: 'follow' })
       .then(response => {
-        if (response.ok) {
+        if (response.redirected) {
+          window.location.href = response.url;
+        }
+        else if (response.ok) {
           return response.json();
         }
       })
@@ -60,12 +64,6 @@ document.getElementById('accept-button').addEventListener("click", e => {
         if (response.redirected) {
           window.location.href = response.url;
         }
-        if (!response.ok) {
-          response.text().then(txt => {
-          });
-        }
-      })
-      .catch(err => {
       });
 });
 
