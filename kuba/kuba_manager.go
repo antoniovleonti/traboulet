@@ -21,15 +21,15 @@ type clientViewPlayer struct {
 }
 
 type ClientView struct {
-	Board         BoardT                      `json:"board"`
-	Status        string                      `json:"status"`
-	LastMove      *LastMoveT                  `json:"lastMove"`
-	WhoseTurn     string                      `json:"whoseTurn"` // color of current player
-	WinThreshold  int                         `json:"winThreshold"`
-	ColorToPlayer map[string]clientViewPlayer `json:"colorToPlayer"`
-	IDToPlayer    map[string]clientViewPlayer `json:"idToPlayer"`
-  ValidMoves []Move `json:"validMoves"`
-  FirstMoveDeadline *time.Time `json:"firstMoveDeadline"`
+	Board             BoardT                      `json:"board"`
+	Status            string                      `json:"status"`
+	LastMove          *LastMoveT                  `json:"lastMove"`
+	WhoseTurn         string                      `json:"whoseTurn"` // color of current player
+	WinThreshold      int                         `json:"winThreshold"`
+	ColorToPlayer     map[string]clientViewPlayer `json:"colorToPlayer"`
+	IDToPlayer        map[string]clientViewPlayer `json:"idToPlayer"`
+	ValidMoves        []Move                      `json:"validMoves"`
+	FirstMoveDeadline *time.Time                  `json:"firstMoveDeadline"`
 }
 
 // Handles mapping cookie -> color (black / white) & ensuring players only move
@@ -123,15 +123,15 @@ func (km KubaManager) GetClientView() ClientView {
 	}
 
 	return ClientView{
-		Board:         km.state.board,
-		Status:        km.state.status.String(),
-		LastMove:      km.state.lastMove,
-		WhoseTurn:     km.state.whoseTurn.String(),
-		WinThreshold:  km.state.winThreshold,
-		ColorToPlayer: colorToPlayer,
-		IDToPlayer:    idToPlayer,
-    ValidMoves: km.state.validMoves,
-    FirstMoveDeadline: km.state.firstMoveDeadline,
+		Board:             km.state.board,
+		Status:            km.state.status.String(),
+		LastMove:          km.state.lastMove,
+		WhoseTurn:         km.state.whoseTurn.String(),
+		WinThreshold:      km.state.winThreshold,
+		ColorToPlayer:     colorToPlayer,
+		IDToPlayer:        idToPlayer,
+		ValidMoves:        km.state.validMoves,
+		FirstMoveDeadline: km.state.firstMoveDeadline,
 	}
 }
 

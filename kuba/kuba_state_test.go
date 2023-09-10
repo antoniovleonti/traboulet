@@ -120,9 +120,9 @@ func TestCantPushOffEdge(t *testing.T) {
 		posToCount:   make(map[string]int),
 	}
 
-  if kuba.ValidateMove(Move{X: 1, Y: 6, D: DirLeft}) {
-    t.Error("Could push own marble off")
-  }
+	if kuba.ValidateMove(Move{X: 1, Y: 6, D: DirLeft}) {
+		t.Error("Could push own marble off")
+	}
 }
 
 func TestExecuteMove(t *testing.T) {

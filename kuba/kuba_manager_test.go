@@ -27,7 +27,7 @@ func fakeBlackCookie() *http.Cookie {
 func TestNewKubaManager(t *testing.T) {
 	km, err := NewKubaManager(
 		Config{TimeControl: time.Minute}, fakeWhiteCookie(), fakeBlackCookie(),
-    nil, nil)
+		nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestNewKubaManager(t *testing.T) {
 func TestTryMove(t *testing.T) {
 	km, err := NewKubaManager(
 		Config{TimeControl: time.Minute}, fakeWhiteCookie(), fakeBlackCookie(),
-    nil, nil)
+		nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
