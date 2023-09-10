@@ -1,23 +1,45 @@
 a:hover{
- cursor: pointer;
+  cursor: pointer;
 }
 
-a{
+a {
  text-decoration: underline;
  font-weight: bold;
 }
 
 .select-marble {
-  background: lightgrey;
-  color: black;
 }
 
 .cancel-selection {
-  background: lightblue;
+  background: yellow;
   color: black;
 }
 
 .move-selection {
+  background: lightblue;
+}
+
+.board-bg {
+  background: lightgrey;
+}
+
+.marble-empty {
+  background: lightgrey;
+}
+
+.marble-red {
+  background: red;
+}
+
+.marble-x {
   background: black;
   color: white;
+}
+
+.marble-o {
+  background: white;
+}
+
+#board {
+  font-size: 2em;
 }

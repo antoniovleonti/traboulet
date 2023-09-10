@@ -31,51 +31,85 @@ class BoardDisplay {
     return movesMap;
   }
 
+  static createTextWithClass(text, classname) {
+    const bg = document.createElement("span");
+    bg.classList.add(classname);
+    bg.appendChild(document.createTextNode(text));
+    return bg
+  }
+
+  static createBoardBottomEdge() {
+    const p = document.createElement("span");
+    p.appendChild(document.createTextNode("   "));
+    p.appendChild(
+        BoardDisplay.createTextWithClass("+---------------+", "board-bg"));
+    p.appendChild(document.createTextNode("\n   y"));
+    return p
+  }
+
+  static createBoardLeftEdge(i) {
+    const span = document.createElement("span");
+    span.appendChild(document.createTextNode(" " + i + " "));
+    span.appendChild(BoardDisplay.createTextWithClass("| ", "board-bg"));
+    return span;
+  }
+
   renderBoardNoSelection(board, validMoves, isYourTurn) {
     this.clear();
     const moves = BoardDisplay.createMoveMap(validMoves);
 
     // header
     let p = document.createElement("span");
-    p.appendChild(BoardDisplay.getHeaderTextNode());
+    p.appendChild(BoardDisplay.createBoardHeader());
 
     for (let i = 0; i < board.length; i++) {
-      p.appendChild(document.createTextNode(" " + i + " | "));
+      p.appendChild(BoardDisplay.createBoardLeftEdge(i));
       for (let j = 0; j < board[i].length; j++) {
         const cellMoves = moves[i] == null ? null : moves[i][j];
         p.appendChild(this.createCellNoSelection(
             board[i][j], cellMoves, i, j, isYourTurn,
             {board: board, moves: validMoves}));
       }
-      p.appendChild(document.createTextNode("|\n"));
+      p.appendChild(BoardDisplay.createBoardRightEdge());
     }
-    p.appendChild(document.createTextNode("   +---------------+\n   y"));
+    p.appendChild(BoardDisplay.createBoardBottomEdge());
     this.el_.appendChild(p);
   }
 
-  static getCellText(marble) {
+  static createMarble(marble, classOverride) {
     switch (marble) {
       case " ":
-        return ".";
+        return BoardDisplay.createTextWithClass(
+            ".", classOverride != null ? classOverride : "marble-empty");
       case "R":
-        return "@";
+        return BoardDisplay.createTextWithClass(
+            "@", classOverride != null ? classOverride : "marble-red");
+      case "W":
+        return BoardDisplay.createTextWithClass(
+            "O", classOverride != null ? classOverride : "marble-o");
+      case "B":
+        return BoardDisplay.createTextWithClass(
+            "X", classOverride != null ? classOverride : "marble-x");
       default:
-        return marble;
+        return null;
     }
   }
 
-  static getHeaderTextNode() {
-    return document.createTextNode(
-        "     0 1 2 3 4 5 6\n   +---------------+ x\n");
+  static createBoardHeader() {
+    const span = document.createElement("span");
+    span.appendChild(document.createTextNode("     0 1 2 3 4 5 6\n   "));
+    span.appendChild(
+        BoardDisplay.createTextWithClass("+---------------+", "board-bg"));
+    span.appendChild(document.createTextNode(" x\n"));
+    return span;
   }
 
   createCellNoSelection(marble, moves, y, x, isYourTurn, cancelParams) {
-    const txt = BoardDisplay.getCellText(marble);
+    const txt = BoardDisplay.createMarble(marble);
 
     const cell = document.createElement("span");
     if (isYourTurn && moves != null) {
       // button
-      const span = document.createElement("span");
       const a = document.createElement("a");
       a.classList.add("select-marble");
       const this_ = this;
@@ -84,37 +118,41 @@ class BoardDisplay {
                                        cancelParams);
       }, false);
 
-      a.appendChild(document.createTextNode(txt));
-      span.appendChild(a);
-      span.appendChild(document.createTextNode(" "));
-    return span;
+      a.appendChild(txt);
+      cell.appendChild(a);
     } else {
-      cell.appendChild(document.createTextNode(txt + " "));
+      cell.appendChild(txt);
     }
+    cell.appendChild(BoardDisplay.createTextWithClass(" ", "board-bg"));
     return cell
+  }
+
+  static createBoardRightEdge() {
+    const span = document.createElement("span");
+    span.appendChild(BoardDisplay.createTextWithClass("|", "board-bg"));
+    span.appendChild(document.createTextNode("\n"));
+    return span
   }
 
   // anchors at (x,y) to cancel and at moves
   renderBoardWithSelection(board, moves, y, x, cancelParams) {
     this.clear()
     const p = document.createElement("span");
-    p.appendChild(BoardDisplay.getHeaderTextNode());
+    p.appendChild(BoardDisplay.createBoardHeader());
 
     for (let i = 0; i < board.length; i++) {
-      p.appendChild(document.createTextNode(" " + i + " | "));
+      p.appendChild(BoardDisplay.createBoardLeftEdge(i));
       for (let j = 0; j < board[i].length; j++) {
         p.appendChild(this.createCellWithSelection(
                           board[i][j], moves, i, j, y, x, cancelParams));
       }
-      p.appendChild(document.createTextNode("|\n"));
+      p.appendChild(BoardDisplay.createBoardRightEdge());
     }
-    p.appendChild(document.createTextNode("   +---------------+\n   y"));
+    p.appendChild(BoardDisplay.createBoardBottomEdge());
     this.el_.appendChild(p);
   }
 
   createCellWithSelection(marble, moves, y, x, Y, X, cancelParams) {
-    const txt = BoardDisplay.getCellText(marble);
-
     const cell = document.createElement("span");
     if (moves == null) {
       cell.appendChild(document.createTextNode(txt + " "));
@@ -123,22 +161,29 @@ class BoardDisplay {
 
     // Cell is button for up move
     if (moves.includes("UP") && x == X && y == Y-1) {
+      const txt = BoardDisplay.createMarble(marble, "move-selection");
       cell.appendChild(this.createDestinationAnchor(txt, X, Y, "UP"));
       return cell;
     } else if (moves.includes("DOWN") && x == X && y == Y+1) {
+      const txt = BoardDisplay.createMarble(marble, "move-selection");
       cell.appendChild(this.createDestinationAnchor(txt, X, Y, "DOWN"));
       return cell;
     } else if (moves.includes("RIGHT") && x == X+1 && y == Y) {
+      const txt = BoardDisplay.createMarble(marble, "move-selection");
       cell.appendChild(this.createDestinationAnchor(txt, X, Y, "RIGHT"));
       return cell;
     } else if (moves.includes("LEFT") && x == X-1 && y == Y) {
+      const txt = BoardDisplay.createMarble(marble, "move-selection");
       cell.appendChild(this.createDestinationAnchor(txt, X, Y, "LEFT"));
       return cell;
     } else if (x == X && y == Y) {
+      const txt = BoardDisplay.createMarble(marble, "cancel-selection");
       cell.appendChild(this.createSourceCancelAnchor(txt, cancelParams));
       return cell
     } else {
-      cell.appendChild(document.createTextNode(txt + " "));
+      const txt = BoardDisplay.createMarble(marble);
+      cell.appendChild(txt);
+      cell.appendChild(BoardDisplay.createTextWithClass(" ", "board-bg"));
       return cell
     }
   }
@@ -153,9 +198,9 @@ class BoardDisplay {
           cancelParams.board, cancelParams.moves, true);
     }, false);
 
-    a.appendChild(document.createTextNode(txt));
+    a.appendChild(txt);
     span.appendChild(a);
-    span.appendChild(document.createTextNode(" "));
+    span.appendChild(BoardDisplay.createTextWithClass(" ", "board-bg"));
     return span;
   }
 
@@ -172,9 +217,9 @@ class BoardDisplay {
       BoardDisplay.fetchPostMove(m);
     }, false);
 
-    a.appendChild(document.createTextNode(txt));
+    a.appendChild(txt);
     span.appendChild(a);
-    span.appendChild(document.createTextNode(" "));
+    span.appendChild(BoardDisplay.createTextWithClass(" ", "board-bg"));
     return span;
   }
 
