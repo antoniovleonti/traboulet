@@ -139,7 +139,6 @@ func (cr *challengeRouter) onChallengeAccepted(
 			"Game could be created, but no callback to do so was provided.")
 	}
 
-	delete(cr.challenges, id)
 	return cr.createGame(config, cookie1, cookie2)
 }
 
