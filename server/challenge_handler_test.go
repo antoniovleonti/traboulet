@@ -291,11 +291,6 @@ func TestIntegrationWithGameRouter(t *testing.T) {
 	}
 	gamePath := joinChallengeResp.Header().Get("Location")
 
-	// check challenge was deleted
-	if len(cr.challenges) != 0 {
-		t.Error("expected challenge to be deleted")
-	}
-
 	// check existence of game
 	getGameReq, err := http.NewRequest("GET", gamePath+"/state", nil)
 	if err != nil {

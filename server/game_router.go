@@ -44,8 +44,6 @@ func (gr *gameRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (gr *gameRouter) forwardToHandler(
 	w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	gr.mutex.RLock()
-	defer gr.mutex.RUnlock()
 
 	id := p.ByName("id")
 	etc := httprouter.CleanPath(p.ByName("etc"))
@@ -57,7 +55,11 @@ func (gr *gameRouter) forwardToHandler(
 	}
 	r.URL = url
 
-	if gh, ok := gr.games[id]; ok && gh != nil {
+	gr.mutex.RLock()
+  gh, ok := gr.games[id];
+	gr.mutex.RUnlock()
+
+	if ok && gh != nil {
 		gh.ServeHTTP(w, r)
 		return
 	}

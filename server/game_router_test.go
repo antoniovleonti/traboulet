@@ -32,17 +32,21 @@ func TestAddGame(t *testing.T) {
 	}
 }
 
-func TestHandleGameRequestForwarding(t *testing.T) {
+func makeRouterWithTestGame() (*gameRouter, error) {
 	gr := newGameRouter("/")
 
 	game, err := newGameHandler(
 		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
 	gr.games["testpath"] = game
+  return gr, nil
+}
 
+func TestHandleGameRequestForwarding(t *testing.T) {
+	gr, err := makeRouterWithTestGame()
 	// This should trigger the above callback
 	req, err := http.NewRequest("GET", "/testpath/state", nil)
 	if err != nil {
@@ -84,4 +88,28 @@ func TestDeleteGamesOlderThan(t *testing.T) {
 	if _, ok := gr.games["incomplete"]; !ok {
 		t.Error("expected incomplete game to stay")
 	}
+}
+
+func TestLongLivedRequestDoesntBlockMutex(t *testing.T) {
+  gr, err := makeRouterWithTestGame()
+  if err != nil {
+    t.Error(err)
+  }
+
+	// Idc about actually receiving anything. It's just important that the request
+  // is being serviced.
+	req, err := http.NewRequest("GET", "/testpath/event-stream", nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// handle request
+	rr := httptest.NewRecorder()
+	go gr.ServeHTTP(rr, req)
+
+  time.Sleep(5 * time.Millisecond)
+
+  if !gr.mutex.TryLock() {
+    t.Error("could not aquire mutex")
+  }
 }
