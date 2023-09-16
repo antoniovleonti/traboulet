@@ -3,62 +3,124 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/tailwindcss@%5E3/src/css/preflight.css">
 <link rel="stylesheet" type="text/css" href="/styles/game.css">
 
-<head><title>Kuba</title><head>
+<head>
+<title>Traboulet | Play</title>
+<head>
 
 <body>
-
-<h1>Traboulet</h1>
-<h2>Game page</h2>
+<h1><a href="/">Traboulet</a></h1>
 
 <div id=error>
-<h3>Error</h3>
+<h2>Error</h2>
 Game doesn't exist or the server is down.
 </div>
 
 <div id=content hidden>
-<h3>Play</h3>
 
-Status: <code id=status>PLACEHOLDER</code>
-
-<div class=pure-g>
-
-<div class=pure-u-1-2>
-<h4>Board</h4>
-<pre id=board>
-     0 1 2 3 4 5 6
-   +---------------+ x
- 0 | . . . . . . . |
- 1 | . . . . . . . |
- 2 | . . . . . . . |
- 3 | . . . . . . . |
- 4 | . . . . . . . |
- 5 | . . . . . . . |
- 6 | . . . . . . . |
-   +---------------+
-   y
-</pre>
+<div>
+<h2>Info</h2>
+Status:
+<span id=status>PLACEHOLDER</span>
 </div>
 
-<div class=pure-u-1-2>
-<h4>Players</h4>
-<h5>
-<span id=other-player-activity hidden>>>></span>
-<code id=other-player-color>-----</code>
-</h5>
-Time: <code id=other-player-clock></code>
-<span id=other-player-first-move-indicator>(to make first move)</span><br>
-Score: <code id=other-player-score></code><br>
-<h5>
-<span id=your-activity hidden>>>></span>
-<code id=your-color>-----</code>
-<span id=you-indicator hidden>(you)</span>
-</h5>
-Time: <code id=your-clock></code>
-<span id=your-first-move-indicator>(to make first move)</span><br>
-Score: <code id=your-score></code><br>
+<div>
+<h2>Board</h2>
+
+<div id=board-graphical>
+  <div id=board-inner>
+    <div class="board-bg">
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+      <div class="bg-raised"></div> <div class="bg-raised"></div>
+    </div>
+    <div id="board-holes" class="board-marble-spaced">
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div> <div class="bg-hole"></div>
+      <div class="bg-hole"></div>
+    </div>
+    <div id="marble-container" class="board-marble-spaced">
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div>
+  <h2>Players</h2>
+  <div class="player-card">
+    <span id=other-player-color>-----</span><br>
+    Score: <span id=other-player-score></span><br>
+    Time
+    <span id=other-player-first-move-indicator>
+      (to make first move)</span>:
+    <span id=other-player-clock></span>
+    <span id=other-player-activity hidden>***</span><br>
+  </div>
+
+  <div class="player-card">
+    <span id=your-color>-----</span>
+    <span id=you-indicator hidden>(you)</span><br>
+    Score: <span id=your-score></span><br>
+    Time: <span id=your-clock></span>
+    <span id=your-first-move-indicator>(to make first move)</span>
+    <span id=your-activity hidden>***</span><br>
+    <button id=resign-button>Resign</button>
+  </div>
 </div>
 
 </div>

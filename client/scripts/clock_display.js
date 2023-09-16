@@ -19,26 +19,28 @@ class ClockDisplay {
     }
   }
 
-  update(timeNs, deadline) {
+  update(timeNs, timeControl, deadline) {
     this.reset()
     if (deadline != null) {
       this.interval_ = setInterval(
-          ClockDisplay.tickClock, 10, this.clock_, Date.parse(deadline));
+          ClockDisplay.tickClock, 10, this.clock_, Date.parse(deadline), 
+          timeControl);
     } else {
-      ClockDisplay.writeClock(this.clock_, timeNs);
+      ClockDisplay.writeClock(this.clock_, timeNs, timeControl);
     }
   }
 
-	static writeClock(clock, durationNs) {
+	static writeClock(clock, durationNs, timeControl) {
     ClockDisplay.clear(clock);
     const fmt = ClockDisplay.formatNs(durationNs);
     clock.appendChild(document.createTextNode(fmt));
   }
 
-  static tickClock(clock, deadline) {
+  static tickClock(clock, deadline, timeControl) {
     const durationMs = new Date(deadline - new Date());
     const durationNs = durationMs * 1e6;
-    ClockDisplay.writeClock(clock, durationNs);
+    ClockDisplay.writeClock(
+        clock, Math.max(durationNs, 0), timeControl);
   }
 
   static formatNs(ns) {

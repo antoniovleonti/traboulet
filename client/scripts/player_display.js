@@ -8,13 +8,13 @@ class PlayerDisplay {
   score_;
   you_;
 
-  constructor(clock, firstMoveIndicator, color, active, score, you) {
-    this.clock_display_ = new ClockDisplay(clock);
-    this.color_ = color;
-    this.firstMoveIndicator_ = firstMoveIndicator;
-    this.active_ = active;
-    this.score_ = score;
-    this.you_ = you;
+  constructor(params) {
+    this.clock_display_ = new ClockDisplay(params.clock);
+    this.color_ = params.color;
+    this.firstMoveIndicator_ = params.firstMoveIndicator;
+    this.active_ = params.active;
+    this.score_ = params.score;
+    this.you_ = params.you;
   }
 
   reset() {
@@ -26,7 +26,7 @@ class PlayerDisplay {
     }
   }
 
-  update(info, isMe, isTheirTurn, firstMoveDeadline) {
+  update(info, isMe, isTheirTurn, timeControl, firstMoveDeadline) {
     console.log(info);
     this.reset();
     let isTheirFirstMove = (isTheirTurn && firstMoveDeadline != null);
@@ -34,7 +34,7 @@ class PlayerDisplay {
     if (isTheirFirstMove) {
       info.deadline = firstMoveDeadline;
     }
-    this.clock_display_.update(info.timeNs, info.deadline);
+    this.clock_display_.update(info.timeNs, timeControl, info.deadline);
     this.score_.appendChild(document.createTextNode(info.score));
     this.color_.appendChild(document.createTextNode(info.color));
     this.active_.hidden = !isTheirTurn;

@@ -1,6 +1,7 @@
 "use strict";
 
-let boardDisplay = new BoardDisplay(document.getElementById("board"));
+let boardDisplay =
+    new BoardDisplay(document.getElementById("marble-container"));
 let statusDisplay = new StatusDisplay(document.getElementById("status"));
 let topPlayer = {
   clock: document.getElementById("other-player-clock"),
@@ -58,14 +59,14 @@ function update(state) {
   document.getElementById("error").hidden = true
   document.getElementById("content").hidden = false
   statusDisplay.update(state.status);
-  playerDisplayManager.update(state.idToPlayer, state.colorToPlayer,
-                              state.whoseTurn, state.firstMoveDeadline);
+  playerDisplayManager.update(
+      state.idToPlayer, state.colorToPlayer,
+      state.status == "ONGOING" ? state.whoseTurn : null, state.timeControl,
+      state.firstMoveDeadline);
 
   const myID = PlayerDisplayManager.getMyID(Object.keys(state.idToPlayer));
-  console.log(myID);
   const isYourTurn = ((myID != null) &&
                       (state.idToPlayer[myID].color == state.whoseTurn));
-  console.log(isYourTurn);
   boardDisplay.update(state.board, state.validMoves, isYourTurn);
 }
 
