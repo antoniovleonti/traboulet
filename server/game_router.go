@@ -56,7 +56,7 @@ func (gr *gameRouter) forwardToHandler(
 	r.URL = url
 
 	gr.mutex.RLock()
-  gh, ok := gr.games[id];
+	gh, ok := gr.games[id]
 	gr.mutex.RUnlock()
 
 	if ok && gh != nil {

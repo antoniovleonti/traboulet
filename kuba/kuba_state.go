@@ -39,7 +39,7 @@ type kubaGame struct {
 	lastMove          *LastMoveT
 	whoseTurn         AgentColor
 	winThreshold      int
-  timeControl       time.Duration
+	timeControl       time.Duration
 	status            Status
 	posToCount        map[string]int // string rep of pos -> # of times it's occured.
 	validMoves        []Move
@@ -84,7 +84,7 @@ func newKubaGame(
 		board:             startPosition,
 		whoseTurn:         agentWhite,
 		winThreshold:      7,
-    timeControl:       config.TimeControl,
+		timeControl:       config.TimeControl,
 		posToCount:        make(map[string]int),
 		firstMoveDeadline: &firstMoveDeadline,
 		onAsyncUpdate:     onAsyncUpdate,

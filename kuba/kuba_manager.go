@@ -30,7 +30,7 @@ type ClientView struct {
 	IDToPlayer        map[string]clientViewPlayer `json:"idToPlayer"`
 	ValidMoves        []Move                      `json:"validMoves"`
 	FirstMoveDeadline *time.Time                  `json:"firstMoveDeadline"`
-  TimeControl       time.Duration               `json:"timeControl"`
+	TimeControl       time.Duration               `json:"timeControl"`
 }
 
 // Handles mapping cookie -> color (black / white) & ensuring players only move
@@ -133,7 +133,7 @@ func (km KubaManager) GetClientView() ClientView {
 		IDToPlayer:        idToPlayer,
 		ValidMoves:        km.state.validMoves,
 		FirstMoveDeadline: km.state.firstMoveDeadline,
-    TimeControl:       km.state.timeControl,
+		TimeControl:       km.state.timeControl,
 	}
 }
 

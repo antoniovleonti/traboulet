@@ -42,7 +42,7 @@ func makeRouterWithTestGame() (*gameRouter, error) {
 		return nil, err
 	}
 	gr.games["testpath"] = game
-  return gr, nil
+	return gr, nil
 }
 
 func TestHandleGameRequestForwarding(t *testing.T) {
@@ -91,13 +91,13 @@ func TestDeleteGamesOlderThan(t *testing.T) {
 }
 
 func TestLongLivedRequestDoesntBlockMutex(t *testing.T) {
-  gr, err := makeRouterWithTestGame()
-  if err != nil {
-    t.Error(err)
-  }
+	gr, err := makeRouterWithTestGame()
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Idc about actually receiving anything. It's just important that the request
-  // is being serviced.
+	// is being serviced.
 	req, err := http.NewRequest("GET", "/testpath/event-stream", nil)
 	if err != nil {
 		t.Error(err)
@@ -107,9 +107,9 @@ func TestLongLivedRequestDoesntBlockMutex(t *testing.T) {
 	rr := httptest.NewRecorder()
 	go gr.ServeHTTP(rr, req)
 
-  time.Sleep(5 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 
-  if !gr.mutex.TryLock() {
-    t.Error("could not aquire mutex")
-  }
+	if !gr.mutex.TryLock() {
+		t.Error("could not aquire mutex")
+	}
 }
