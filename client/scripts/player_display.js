@@ -3,7 +3,6 @@
 class PlayerDisplay {
   clock_display_;
   color_;
-  firstMoveIndicator_;
   active_;
   score_;
   you_;
@@ -11,7 +10,6 @@ class PlayerDisplay {
   constructor(params) {
     this.clock_display_ = new ClockDisplay(params.clock);
     this.color_ = params.color;
-    this.firstMoveIndicator_ = params.firstMoveIndicator;
     this.active_ = params.active;
     this.score_ = params.score;
     this.you_ = params.you;
@@ -30,7 +28,6 @@ class PlayerDisplay {
     console.log(info);
     this.reset();
     let isTheirFirstMove = (isTheirTurn && firstMoveDeadline != null);
-    this.firstMoveIndicator_.hidden = !isTheirFirstMove;
     if (isTheirFirstMove) {
       info.deadline = firstMoveDeadline;
     }

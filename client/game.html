@@ -19,18 +19,20 @@
 Game doesn't exist or the server is down.
 </div>
 
-<div id=content hidden>
-
-<div>
 <h2>Info</h2>
 Status:
 <span id=status>PLACEHOLDER</span>
-</div>
+
+<div id=content hidden>
 
 <div>
+</div>
+
+<div id=board-section>
 <h2>Board</h2>
 
 <div id=board-graphical>
+  <div id=board-inner-padding>
   <div id=board-inner>
     <div class="board-bg">
       <div class="bg-raised"></div> <div class="bg-raised"></div>
@@ -96,6 +98,7 @@ Status:
     <div id="marble-container" class="board-marble-spaced">
     </div>
   </div>
+  </div>
 </div>
 
 </div>
@@ -105,10 +108,8 @@ Status:
   <div class="player-card">
     <span id=other-player-color>-----</span><br>
     Score: <span id=other-player-score></span><br>
-    Time
-    <span id=other-player-first-move-indicator>
-      (to make first move)</span>:
-    <span id=other-player-clock></span>
+    Time:
+    <span id=other-player-clock class="player-clock"></span>
     <span id=other-player-activity hidden>***</span><br>
   </div>
 
@@ -116,11 +117,10 @@ Status:
     <span id=your-color>-----</span>
     <span id=you-indicator hidden>(you)</span><br>
     Score: <span id=your-score></span><br>
-    Time: <span id=your-clock></span>
-    <span id=your-first-move-indicator>(to make first move)</span>
+    Time: <span id=your-clock class="player-clock"></span>
     <span id=your-activity hidden>***</span><br>
-    <button id=resign-button>Resign</button>
   </div>
+    <button id=resign-button>Resign</button>
 </div>
 
 </div>

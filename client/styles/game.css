@@ -21,9 +21,20 @@ h2, h3, h5, h6 {
   border: 1px solid;
   padding: 10px;
   margin: 10px;
+  width: 200px;
+}
+
+.player-clock {
+  background-color: lightgrey;
+  padding: .2em;
+}
+
+.player-clock-active {
+  background-color: lime;
 }
 
 button {
+  margin: 10px;
   border: 1px solid;
   padding: 10px;
   border-radius: 10px;
@@ -32,16 +43,32 @@ button:hover {
   background-color: whitesmoke;
 }
 
+#status {
+  background-color: lightgrey;
+  padding: 0.2em;
+  border-radius: 5%;
+}
+
+#board-section {
+}
+
 #board-graphical {
-  padding: 3%;
-  width: 500px;
-  height: 500px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  --board-graphical-width: min(90vw, 500px);
+  width: var(--board-graphical-width);
+  height: var(--board-graphical-width);
   background-color: silver;
-  border-radius: 10%
+  border-radius: 10%;
+}
+
+#board-inner-padding {
+  width: 90%;
+  height: 90%;
 }
 
 #board-inner {
-  padding: 0%;
   border: 1px solid black;
   border-radius: 2%;
   display: grid;
@@ -137,4 +164,17 @@ button:hover {
 
 .marble-ghost {
   opacity: 0.5;
+}
+
+@media (min-width: 900px) {
+#content {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (min-width: 1000px) {
+#content {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
 }
