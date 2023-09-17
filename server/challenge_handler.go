@@ -14,7 +14,7 @@ import (
 // refresh or whatever-- details of what is communicated to the client is kind
 // of none of this file's business), and probably dispose of this handler.
 type challengeAcceptedCb func(
-	kuba.Config, *http.Cookie, *http.Cookie) (string, error)
+	*challengeHandler, kuba.Config, *http.Cookie, *http.Cookie) (string, error)
 
 type challengeHandler struct {
 	router              *httprouter.Router
@@ -125,7 +125,7 @@ func (ch *challengeHandler) postAccept(
 		return
 	}
 
-	gamePath, err := ch.onChallengeAccepted(ch.config, ch.creator, c)
+	gamePath, err := ch.onChallengeAccepted(ch, ch.config, ch.creator, c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

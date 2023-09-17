@@ -9,10 +9,12 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
-	"time"
 )
 
-type createGameFnT func(kuba.Config, *http.Cookie, *http.Cookie) (string, error)
+type deleteChallengeFn func()
+
+type createGameFnT func(
+	deleteChallengeFn, kuba.Config, *http.Cookie, *http.Cookie) (string, error)
 
 type challengeRouter struct {
 	router     *httprouter.Router
@@ -95,8 +97,10 @@ func (cr *challengeRouter) postChallenge(
 
 	// create challenge
 	path := cr.pathGen.newString(8)
-	bind := func(c kuba.Config, c1, c2 *http.Cookie) (string, error) {
-		return cr.onChallengeAccepted(path, c, c1, c2)
+	bind := func(
+		ch *challengeHandler, c kuba.Config, c1, c2 *http.Cookie) (
+		string, error) {
+		return cr.onChallengeAccepted(ch, path, c, c1, c2)
 	}
 	challenge, err := newChallengeHandler(cookie, config, bind)
 	if err != nil {
@@ -127,7 +131,7 @@ func (cr *challengeRouter) getChallenges(
 
 // Not thread safe-- MUST be synchronized by challenge handler
 func (cr *challengeRouter) onChallengeAccepted(
-	id string, config kuba.Config, cookie1,
+	ch *challengeHandler, id string, config kuba.Config, cookie1,
 	cookie2 *http.Cookie) (string, error) {
 	if _, ok := cr.challenges[id]; !ok {
 		// ???? challenge doesn't exist!
@@ -139,31 +143,9 @@ func (cr *challengeRouter) onChallengeAccepted(
 			"Game could be created, but no callback to do so was provided.")
 	}
 
-	return cr.createGame(config, cookie1, cookie2)
-}
-
-func (cr *challengeRouter) PeriodicallyDeleteChallengesOlderThan(
-	d time.Duration) {
-	for {
-		time.Sleep(d)
-		cr.deleteChallengesOlderThan(d)
+	deleteCb := func() {
+		delete(cr.challenges, id)
 	}
-}
 
-func (cr *challengeRouter) deleteChallengesOlderThan(d time.Duration) {
-	cr.mutex.Lock()
-	defer cr.mutex.Unlock()
-
-	count := 0
-	for k, challenge := range cr.challenges {
-		if time.Since(challenge.timestamp) > d {
-			delete(cr.challenges, k)
-			count++
-		}
-	}
-	if count > 0 {
-		log.Printf(
-			"Cleaned up %d challenge(s) (%d challenges remain)",
-			count, len(cr.challenges))
-	}
+	return cr.createGame(deleteCb, config, cookie1, cookie2)
 }

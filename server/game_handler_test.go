@@ -36,7 +36,7 @@ func TestNewGameHandler(t *testing.T) {
 	var _ http.Handler = (*gameHandler)(nil)
 
 	gh, err := newGameHandler(
-		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Error(err)
@@ -48,7 +48,7 @@ func TestNewGameHandler(t *testing.T) {
 
 func TestGetState(t *testing.T) {
 	gh, err := newGameHandler(
-		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
@@ -129,7 +129,7 @@ func postMove(t *testing.T, gh *gameHandler, body []byte,
 
 func TestPostValidMove(t *testing.T) {
 	gh, err := newGameHandler(
-		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
@@ -150,7 +150,7 @@ func TestPostValidMove(t *testing.T) {
 
 func TestPostInvalidMove(t *testing.T) {
 	gh, err := newGameHandler(
-		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
@@ -165,7 +165,7 @@ func TestPostInvalidMove(t *testing.T) {
 
 func TestPostMoveNoCookie(t *testing.T) {
 	gh, err := newGameHandler(
-		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
@@ -186,7 +186,7 @@ func TestPostMoveNoCookie(t *testing.T) {
 
 func TestPostMoveEmptyBody(t *testing.T) {
 	gh, err := newGameHandler(
-		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
@@ -201,7 +201,7 @@ func TestPostMoveEmptyBody(t *testing.T) {
 
 func TestSendKeepAlive(t *testing.T) {
 	gh, err := newGameHandler(
-		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
@@ -240,5 +240,20 @@ func TestSendKeepAlive(t *testing.T) {
 	<-done
 	if msgsReceived != 1 {
 		t.Error("expected 1 message")
+	}
+}
+
+func TestDeleteChallenge(t *testing.T) {
+	cbCalled := false
+	cb := func() {
+		cbCalled = true
+	}
+	gh, _ := newGameHandler(
+		cb, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+
+	gh.DeleteChallenge()
+	if !cbCalled {
+		t.Error("callback not called")
 	}
 }

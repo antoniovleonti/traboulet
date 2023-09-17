@@ -21,8 +21,8 @@ func TestAddGame(t *testing.T) {
 	gr := newGameRouter("/")
 
 	_, err := gr.addGame(
-		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
-		fakeBlackCookie())
+		func() {}, kuba.Config{TimeControl: 1 * time.Minute},
+		fakeWhiteCookie(), fakeBlackCookie())
 	if err != nil {
 		t.Error(err)
 	}
@@ -36,7 +36,7 @@ func makeRouterWithTestGame() (*gameRouter, error) {
 	gr := newGameRouter("/")
 
 	game, err := newGameHandler(
-		kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		return nil, err

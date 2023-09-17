@@ -166,26 +166,6 @@ func TestJoinNonExistentID(t *testing.T) {
 	}
 }
 
-func TestDeleteChallengesOlderThan(t *testing.T) {
-	cr := newChallengeRouter("/", nil)
-	cr.challenges["too old"] = &challengeHandler{
-		timestamp: time.Now().Add(-1 * time.Hour),
-	}
-	cr.challenges["not too old"] = &challengeHandler{
-		timestamp: time.Now().Add(-1 * time.Minute),
-	}
-
-	cr.deleteChallengesOlderThan(10 * time.Minute)
-
-	if len(cr.challenges) != 1 {
-		t.Errorf("expected exactly 1 game (got %d)", len(cr.challenges))
-	}
-
-	if _, ok := cr.challenges["not too old"]; !ok {
-		t.Error("expected newer challenge to stay")
-	}
-}
-
 func TestPostChallengeInvalidConfig(t *testing.T) {
 	cr := newChallengeRouter("/", nil)
 

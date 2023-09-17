@@ -14,7 +14,9 @@ import (
 func TestNewChallengeHandler(t *testing.T) {
 	var _ http.Handler = (*challengeHandler)(nil)
 
-	cb := func(kuba.Config, *http.Cookie, *http.Cookie) (string, error) {
+	cb := func(
+		*challengeHandler, kuba.Config, *http.Cookie, *http.Cookie) (
+		string, error) {
 		return "", nil
 	}
 
@@ -33,7 +35,9 @@ func TestPostJoinValid(t *testing.T) {
 	black := fakeBlackCookie()
 
 	callbackCalled := false
-	cb := func(c kuba.Config, w *http.Cookie, b *http.Cookie) (string, error) {
+	cb := func(
+		ch *challengeHandler, c kuba.Config, w *http.Cookie, b *http.Cookie) (
+		string, error) {
 		if w.Value != white.Value {
 			t.Error("white cookie did not match expectation")
 		}
@@ -86,7 +90,9 @@ func TestPostJoinNoCookie(t *testing.T) {
 	white := fakeWhiteCookie()
 
 	callbackCalled := false
-	cb := func(kuba.Config, *http.Cookie, *http.Cookie) (string, error) {
+	cb := func(
+		*challengeHandler, kuba.Config, *http.Cookie, *http.Cookie) (
+		string, error) {
 		callbackCalled = true
 		return "", nil
 	}
@@ -123,7 +129,9 @@ func TestPostJoinSameCookie(t *testing.T) {
 	white := fakeWhiteCookie()
 
 	callbackCalled := false
-	cb := func(kuba.Config, *http.Cookie, *http.Cookie) (string, error) {
+	cb := func(
+		*challengeHandler, kuba.Config, *http.Cookie, *http.Cookie) (
+		string, error) {
 		callbackCalled = true
 		return "", nil
 	}
@@ -162,7 +170,9 @@ func getAcceptedChallenge() (*challengeHandler, error) {
 	black := fakeBlackCookie()
 
 	callbackCalled := false
-	cb := func(kuba.Config, *http.Cookie, *http.Cookie) (string, error) {
+	cb := func(
+		*challengeHandler, kuba.Config, *http.Cookie, *http.Cookie) (
+		string, error) {
 		callbackCalled = true
 		return "", nil
 	}

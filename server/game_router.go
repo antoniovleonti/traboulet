@@ -69,7 +69,8 @@ func (gr *gameRouter) forwardToHandler(
 }
 
 func (gr *gameRouter) addGame(
-	config kuba.Config, cookie1, cookie2 *http.Cookie) (string, error) {
+	deleteChallengeCb deleteChallengeFn, config kuba.Config,
+	cookie1, cookie2 *http.Cookie) (string, error) {
 	gr.mutex.Lock()
 	defer gr.mutex.Unlock()
 
@@ -78,7 +79,7 @@ func (gr *gameRouter) addGame(
 		cookie1, cookie2 = cookie2, cookie1
 	}
 
-	game, err := newGameHandler(config, cookie1, cookie2)
+	game, err := newGameHandler(deleteChallengeCb, config, cookie1, cookie2)
 	if err != nil {
 		return "", err
 	}
@@ -108,7 +109,7 @@ func (gr *gameRouter) deleteGamesOlderThan(d time.Duration) {
 			continue
 		}
 		if *actual > d {
-			delete(gr.games, id)
+			gr.deleteGame(id)
 			count++
 		}
 	}
@@ -116,4 +117,9 @@ func (gr *gameRouter) deleteGamesOlderThan(d time.Duration) {
 		log.Printf(
 			"Cleaned up %d completed games (%d games remain).", count, len(gr.games))
 	}
+}
+
+func (gr *gameRouter) deleteGame(id string) {
+	gr.games[id].DeleteChallenge()
+	delete(gr.games, id)
 }

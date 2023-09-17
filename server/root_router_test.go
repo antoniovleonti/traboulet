@@ -141,4 +141,12 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 	if postMoveResp.Code != http.StatusOK {
 		t.Errorf("expected status %d, got %d", http.StatusOK, postMoveResp.Code)
 	}
+
+	completionT := time.Now().Add(-1 * time.Hour)
+	rr.gameRtr.games[gameID].completionTime = &completionT
+	rr.gameRtr.deleteGamesOlderThan(1 * time.Minute)
+
+	if len(rr.challengeRtr.challenges) != 0 {
+		t.Error("expected challenge to be deleted")
+	}
 }

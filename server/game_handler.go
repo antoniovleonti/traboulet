@@ -15,18 +15,21 @@ import (
 // that any other games exist (accepts requests for endpoints like "/state/").
 // This allows for things like writing a single-game server for testing.
 type gameHandler struct {
-	km             *kuba.KubaManager
-	router         *httprouter.Router
-	pub            publisher
-	completionTime *time.Time
-	timeMutex      sync.Mutex
+	km                *kuba.KubaManager
+	router            *httprouter.Router
+	pub               publisher
+	completionTime    *time.Time
+	timeMutex         sync.Mutex
+	deleteChallengeCb deleteChallengeFn
 }
 
 func newGameHandler(
-	config kuba.Config, white, black *http.Cookie) (*gameHandler, error) {
+	deleteChallengeCb deleteChallengeFn, config kuba.Config,
+	white, black *http.Cookie) (*gameHandler, error) {
 	gh := gameHandler{
-		router: httprouter.New(),
-		pub:    publisher{},
+		router:            httprouter.New(),
+		pub:               publisher{},
+		deleteChallengeCb: deleteChallengeCb,
 	}
 	km, err :=
 		kuba.NewKubaManager(config, white, black, gh.publishUpdate, gh.markComplete)
@@ -158,4 +161,10 @@ func (gh *gameHandler) DurationSinceCompletion() *time.Duration {
 	}
 	d := time.Since(*gh.completionTime)
 	return &d
+}
+
+func (gh *gameHandler) DeleteChallenge() {
+	if gh.deleteChallengeCb != nil {
+		gh.deleteChallengeCb()
+	}
 }
