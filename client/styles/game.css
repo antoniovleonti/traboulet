@@ -50,20 +50,31 @@ button:hover {
 }
 
 #board-section {
-}
+  position: relative;
 
+#board-content {
+  padding: 10px;
+}
+}
 #board-graphical {
   display: flex;
   justify-content: center;
   align-items: center;
-  --board-graphical-width: min(90vw, 500px);
-  width: var(--board-graphical-width);
-  height: var(--board-graphical-width);
+  width: min(100%, 500px);
   background-color: silver;
   border-radius: 10%;
+  position: relative;
+}
+/* this is to make the board a responsive square
+   https://spin.atomicobject.com/2015/07/14/css-responsive-square/ */
+#board-graphical:after {
+  content: "";
+  display: block;
+  padding-bottom: 100%;
 }
 
 #board-inner-padding {
+  position: absolute;
   width: 90%;
   height: 90%;
 }
