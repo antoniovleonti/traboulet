@@ -112,6 +112,8 @@ func TestGetChallenges(t *testing.T) {
 		}
 		cr.challenges[params.s] = challenge
 	}
+  // Add an accepted challenge
+  cr.challenges["accepted"] = &challengeHandler{ accepted: true }
 
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
@@ -133,15 +135,21 @@ func TestGetChallenges(t *testing.T) {
 		t.Error(err)
 	}
 	for k, v := range cr.challenges {
-		actualv, ok := result[k]
-		if !ok {
-			t.Error("expected key " + k + " to exist in result")
-		}
-		if ok && actualv.Config.TimeControl != v.config.TimeControl {
-			t.Errorf(
-				"time %s does not match expected %s",
-				actualv.Config.TimeControl.String(), v.config.TimeControl.String())
-		}
+    if k == "accepted" {
+      if _, ok := result["accepted"]; ok {
+        t.Error("expected accepted challenge to not be sent.")
+      }
+    } else {
+      actualv, ok := result[k]
+      if !ok {
+        t.Error("expected key " + k + " to exist in result")
+      }
+      if ok && actualv.Config.TimeControl != v.config.TimeControl {
+        t.Errorf(
+          "time %s does not match expected %s",
+          actualv.Config.TimeControl.String(), v.config.TimeControl.String())
+      }
+    }
 	}
 }
 

@@ -120,7 +120,14 @@ func (cr *challengeRouter) getChallenges(
 	w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
-	b, err := json.Marshal(cr.challenges)
+
+  unaccepted := make(map[string]*challengeHandler)
+  for id, ch := range cr.challenges {
+    if !ch.accepted {
+      unaccepted[id] = ch
+    }
+  }
+	b, err := json.Marshal(unaccepted)
 	if err != nil {
 		http.Error(
 			w, "could not marshal challenges: "+err.Error(),
