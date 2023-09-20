@@ -31,27 +31,33 @@ class ChallengeBrowser {
   createEmpty() {
     let tr = document.createElement("tr");
     let td = document.createElement("td");
-    td.colSpan = "2";
-    let txt = document.createTextNode("no games found.");
+    td.colSpan = "3";
+    let txt = document.createTextNode("No pending, public challenges found.");
     tr.appendChild(td);
     td.appendChild(txt);
     return tr;
   }
 
 	createRow(id, challenge) {
-    let tr = document.createElement("tr");
-    let td = document.createElement("td");
-    let ns = challenge.config.timeControlNs;
-    let timeTxt = document.createTextNode(ChallengeBrowser.formatNs(ns));
+    const tr = document.createElement("tr");
+    const player = document.createElement("td");
+    player.appendChild(document.createTextNode("(todo)"));
+    tr.appendChild(player);
+
+    const td = document.createElement("td");
+    const ns = challenge.config.timeControlNs;
+    const timeTxt = document.createTextNode(ChallengeBrowser.formatNs(ns));
     tr.appendChild(td);
     td.appendChild(timeTxt);
 
-    let a = document.createElement("a");
+    const linktd = document.createElement('td');
+    const a = document.createElement("a");
     a.title = "You will be brought to another page to confirm.";
     a.href = "/challenges/" + id;
-    let atxt = document.createTextNode("View challenge");
-    tr.appendChild(a);
+    const atxt = document.createTextNode("View");
     a.appendChild(atxt);
+    linktd.appendChild(a);
+    tr.appendChild(linktd);
 
     return tr;
   }

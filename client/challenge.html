@@ -3,39 +3,41 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/tailwindcss@%5E3/src/css/preflight.css">
+<link rel="stylesheet" type="text/css" href="/styles/base.css">
 
-<head><title>Kuba</title><head>
+<head><title>Traboulet | Challenge</title><head>
 
 <body>
 
-<h1>Traboulet</h1>
-<h2>Challenge</h2>
+<h1><a href="/">Traboulet</a></h1>
+<div class=tl-content>
 
 <div id=not-found>
 <h3>Challenge not found</h3>
-This challenge does not exist & cannot be joined.
+This challenge does not exist &amp; cannot be joined.
 </div>
 
 <div id=found hidden>
 <h3>Join</h3>
-You are about to accept the following challenge:<br>
-Time control: <span class=time-control-span></span><br>
-<button id=accept-button type=submit class="pure-button pure-button-primary">
-  Accept
-</button><br>
-You will be redirected to the game once you accept.
+You are about to accept a challenge with the following settings:<br><br>
+Time control: <span class=time-control-span></span><br><br>
+- Once you accept, you will be redirected to the game which will immediately start.<br>
+<button id=accept-button type=submit>Accept</button>
 </div>
 
 <div id=waiting hidden>
 <h3>Waiting for another player</h3>
-You've created the following challenge:<br>
-Time control: <span class=time-control-span></span><br>
-You can share the link to this page.
-You will play with the first person to accept this challenge.<br>
-You will be redirected to the game once someone accepts.
+You've created a challenge with the following settings:<br><br>
+&emsp;Time control: <span class=time-control-span></span><br><br>
+- You can share the link to this page.<br>
+- You will play with the first person to accept this challenge.<br>
+- Once someone accepts, you will be redirected to the game which will immediately start.<br>
+- This challenge will eventually be deleted by the server if no one accepts it.
 </div>
 
+</div>
 </body>
 
 <script src='/scripts/challenge_browser.js'></script>

@@ -1,0 +1,60 @@
+body {
+  font-family: 'Roboto Mono';
+}
+
+h1 {
+  background-color: red;
+  padding: 0.5em;
+  border-bottom: 1px solid black;
+  margin-bottom: 1em;
+  text-align: center;
+}
+
+h2, h3, h5, h6 {
+  margin-top: 1em;
+  font-style: italic;
+  color: grey;
+}
+
+.tl-content {
+  --tl-content-padding: 1em;
+  padding-left: var(--tl-content-padding);
+  padding-right: var(--tl-content-padding);
+  max-width: 80em;
+  margin: auto;
+}
+
+a {
+  text-decoration: underline;
+}
+
+button {
+  border: 1px solid;
+  --button-padding-lr: 0.6em;
+  --button-padding-tb: 0.3em;
+  padding-left: var(--button-padding-lr);
+  padding-right: var(--button-padding-lr);
+  padding-top: var(--button-padding-tb);
+  padding-bottom: var(--button-padding-tb);
+  border-radius: 10px;
+}
+button:hover {
+  background-color: whitesmoke;
+}
+
+table {
+  border: 1px solid;
+}
+th, td {
+  padding: 0.4em;
+  border: 1px solid;
+}
+
+th {
+  font-weight: normal;
+  background-color: whitesmoke;
+}
+
+input {
+  border: 1px solid;
+}

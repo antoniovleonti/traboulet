@@ -3,41 +3,46 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/tailwindcss@%5E3/src/css/preflight.css">
+<link rel="stylesheet" type="text/css" href="/styles/base.css">
+<link rel="stylesheet" type="text/css" href="/styles/index.css">
 
-<head><title>Kuba</title><head>
+<head><title>Traboulet | Home</title><head>
 
 <body>
 
-<h1>Traboulet</h1>
-<h2>Home</h2>
+<h1><a href="/">Traboulet</a></h1>
 
-<div id=error hidden>
-<h3>Can't connect</h3>
+<div id=error hidden class=tl-content>
+<h2>Can't connect</h2>
 
-Couldn't connect to the API server.
+Couldn't connect to the API server.<br>
 It is most likely down at the moment.
 </div>
 
-<div id=content>
-<h3>Create a challenge</h3>
+<div id=content class=tl-content>
+<h2>Create a challenge</h2>
 
 Fill out the following form and press 'Create' to add a challenge.
 
-<form id=new-challenge-form class="pure-form pure-form-aligned">
+<form id=new-challenge-form>
 	<label for=initial-time-min>Time control (min):</label>
-	<input type=number id=initial-time-min name=initialTimeMin required=""><br>
-	<button type=submit class="pure-button">Create</button>
+	<input type=number id=initial-time-min name=initialTimeMin required
+      min=1 max=60><br>
+	<button type=submit>Create</button>
 	<span id=create-err></span>
 </form>
 
-<h3>Public challenges</h3>
+<h2>Public challenges</h2>
 
-Below are open challenges from other players.
+Below are open challenges from other players.<br>
+<i>Viewing a challenge does not automatically join it; you'll have a chance to confirm.</i>
 
-<table class="pure-table">
+<table>
 	<thead>
 		<tr>
+      <th>Player ID</th>
 			<th>Time control (min)</th>
 			<th>Link to challenge</th>
 		</tr>

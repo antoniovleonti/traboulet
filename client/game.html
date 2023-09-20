@@ -5,6 +5,7 @@
 
 <link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>
 <link rel="stylesheet" type="text/css" href="https://unpkg.com/tailwindcss@%5E3/src/css/preflight.css">
+<link rel="stylesheet" type="text/css" href="/styles/base.css">
 <link rel="stylesheet" type="text/css" href="/styles/game.css">
 
 <head>
@@ -14,16 +15,19 @@
 <body>
 <h1><a href="/">Traboulet</a></h1>
 
+<div class=tl-content>
+
 <div id=error>
 <h2>Error</h2>
 Game doesn't exist or the server is down.
 </div>
 
+<div>
 <h2>Info</h2>
 Status:
 <span id=status>*****</span>
 
-<div id=content hidden>
+<div id=game-dash>
 
 <div>
 </div>
@@ -126,6 +130,8 @@ Status:
 </div>
 
 </div>
+</div>
+</div> <!--tl-content-->
 
 </body>
 
