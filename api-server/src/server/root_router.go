@@ -34,6 +34,7 @@ func NewRootRouter() *rootRouter {
 	rr.router.GET("/challenges/*etc", rr.fwdToChallengeRouter)
 	rr.router.POST("/challenges/*etc", rr.fwdToChallengeRouter)
 
+	go rr.challengeRtr.PeriodicallyDeleteOldChallenges(10 * time.Minute)
 	go rr.gameRtr.PeriodicallyDeleteGamesOlderThan(10 * time.Minute)
 
 	return &rr

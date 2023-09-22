@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+  "time"
 )
 
 type deleteChallengeFn func()
@@ -55,8 +56,6 @@ func (cr *challengeRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (cr *challengeRouter) forwardToHandler(
 	w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	cr.mutex.RLock()
-	defer cr.mutex.RUnlock()
 
 	id := p.ByName("id")
 	etc := httprouter.CleanPath(p.ByName("etc"))
@@ -68,7 +67,11 @@ func (cr *challengeRouter) forwardToHandler(
 	}
 	r.URL = url
 
-	if ch, ok := cr.challenges[id]; ok && ch != nil {
+	cr.mutex.RLock()
+  ch, ok := cr.challenges[id];
+	cr.mutex.RUnlock()
+
+	if ok && ch != nil {
 		ch.ServeHTTP(w, r)
 		return
 	}
@@ -156,3 +159,30 @@ func (cr *challengeRouter) onChallengeAccepted(
 
 	return cr.createGame(deleteCb, config, cookie1, cookie2)
 }
+
+func (cr *challengeRouter) PeriodicallyDeleteOldChallenges(d time.Duration) {
+ 	for {
+ 		time.Sleep(d)
+ 		cr.deleteOldChallenges(d)
+ 	}
+ }
+
+// Only deletes unaccepted challenges. Accepted challenges stay around so they
+// can redirect to the corresponding game.
+ func (cr *challengeRouter) deleteOldChallenges(d time.Duration) {
+ 	cr.mutex.Lock()
+ 	defer cr.mutex.Unlock()
+
+ 	count := 0
+ 	for k, challenge := range cr.challenges {
+ 		if !challenge.accepted && time.Since(challenge.timestamp) > d {
+ 			delete(cr.challenges, k)
+ 			count++
+ 		}
+ 	}
+ 	if count > 0 {
+ 		log.Printf(
+ 			"Cleaned up %d challenge(s) (%d challenges remain)",
+ 			count, len(cr.challenges))
+ 	}
+ }

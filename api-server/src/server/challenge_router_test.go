@@ -197,3 +197,35 @@ func TestPostChallengeInvalidConfig(t *testing.T) {
 			"code %d does not match expectation %d", rr.Code, http.StatusBadRequest)
 	}
 }
+
+func TestDeleteOldChallenges(t *testing.T) {
+ 	cr := newChallengeRouter("/", nil)
+ 	cr.challenges["too old"] = &challengeHandler{
+ 		timestamp: time.Now().Add(-1 * time.Hour),
+		accepted: false,
+ 	}
+ 	cr.challenges["accepted"] = &challengeHandler{
+ 		timestamp: time.Now().Add(-1 * time.Hour),
+		accepted: true,
+ 	}
+ 	cr.challenges["not too old"] = &challengeHandler{
+ 		timestamp: time.Now().Add(-1 * time.Minute),
+		accepted: false,
+ 	}
+
+ 	cr.deleteOldChallenges(10 * time.Minute)
+
+ 	if len(cr.challenges) != 2 {
+ 		t.Errorf("expected exactly 2 games (got %d)", len(cr.challenges))
+ 	}
+
+ 	if _, ok := cr.challenges["not too old"]; !ok {
+ 		t.Error("expected newer challenge to stay")
+ 	}
+ 	if _, ok := cr.challenges["accepted"]; !ok {
+ 		t.Error("expected accepted challenge to stay")
+ 	}
+ 	if _, ok := cr.challenges["too old"]; ok {
+ 		t.Error("expected too old challenge to be deleted")
+ 	}
+ }
