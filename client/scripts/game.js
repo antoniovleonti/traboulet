@@ -57,7 +57,7 @@ function update(state) {
   }
   console.log("state: ", state);
   document.getElementById("error").hidden = true
-  document.getElementById("content").hidden = false
+  document.getElementById("game-dash").hidden = false
   statusDisplay.update(state.status);
   playerDisplayManager.update(
       state.idToPlayer, state.colorToPlayer,
