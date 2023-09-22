@@ -1,0 +1,12 @@
+version: '3'
+services:
+  web:
+    build: ./web
+    links:
+      - "api-server"
+    ports:
+     - "80:80"
+  api-server:
+    build: ./api-server
+    ports:
+      - "25565:25565"

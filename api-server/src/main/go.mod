@@ -1,6 +1,6 @@
 module main
 
-go 1.21.0
+go 1.21
 
 replace kuba => ../kuba
 
