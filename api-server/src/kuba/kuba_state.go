@@ -165,7 +165,13 @@ func (kg *kubaGame) ValidateMove(move Move) bool {
 	return true
 }
 
-func (kg *kubaGame) updateStatus() Status {
+func (kg *kubaGame) updateStatus() (newStatus Status) {
+  // If the game is over, it's no one's turn.
+  defer func() {
+    if newStatus != statusOngoing {
+      kg.whoseTurn = agentNil
+    }
+  }()
 	// Check for preexisting "sticky" status
 	if kg.status != statusOngoing {
 		return kg.status

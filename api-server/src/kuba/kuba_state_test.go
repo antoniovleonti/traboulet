@@ -202,7 +202,7 @@ func TestExecuteMove(t *testing.T) {
 	playTestCases(runOutOfTime)
 }
 
-func TestGetStatus(t *testing.T) {
+func TestUpdateStatus(t *testing.T) {
 	type TestCase struct {
 		// No need to create a map for the kubaGame; this will be handled before
 		// the test happens
@@ -270,6 +270,11 @@ func TestGetStatus(t *testing.T) {
 		if actual := test.kuba.updateStatus(); actual != test.status {
 			t.Errorf("testCases[%d]: status %d != %d", idx, actual, test.status)
 		}
+    if test.status != statusOngoing && test.kuba.whoseTurn != agentNil {
+      t.Errorf(
+        "testCases[%d]: game not ongoing; expected whoseTurn to be agentNil, " +
+        "got %s", idx, test.kuba.whoseTurn.String())
+    }
 	}
 }
 

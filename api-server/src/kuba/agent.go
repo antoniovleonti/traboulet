@@ -20,7 +20,9 @@ type agent struct {
 }
 
 func (ac AgentColor) String() string {
-	if ac == agentWhite {
+	if ac == agentNil {
+    return ""
+  } else if ac == agentWhite {
 		return "WHITE"
 	} else if ac == agentBlack {
 		return "BLACK"
