@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/julienschmidt/httprouter"
-	"kuba"
+	"game"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,7 +15,7 @@ import (
 type deleteChallengeFn func()
 
 type createGameFnT func(
-	deleteChallengeFn, kuba.Config, *http.Cookie, *http.Cookie) (string, error)
+	deleteChallengeFn, game.Config, *http.Cookie, *http.Cookie) (string, error)
 
 type challengeRouter struct {
 	router     *httprouter.Router
@@ -88,7 +88,7 @@ func (cr *challengeRouter) postChallenge(
 	}
 	cookie := r.Cookies()[0]
 	// parse body
-	var config kuba.Config
+	var config game.Config
 	err := json.NewDecoder(r.Body).Decode(&config)
 	if err != nil {
 		http.Error(w, "Could not parse config: "+err.Error(), http.StatusBadRequest)
@@ -101,7 +101,7 @@ func (cr *challengeRouter) postChallenge(
 	// create challenge
 	path := cr.pathGen.newString(8)
 	bind := func(
-		ch *challengeHandler, c kuba.Config, c1, c2 *http.Cookie) (
+		ch *challengeHandler, c game.Config, c1, c2 *http.Cookie) (
 		string, error) {
 		return cr.onChallengeAccepted(ch, path, c, c1, c2)
 	}
@@ -141,7 +141,7 @@ func (cr *challengeRouter) getChallenges(
 
 // Not thread safe-- MUST be synchronized by challenge handler
 func (cr *challengeRouter) onChallengeAccepted(
-	ch *challengeHandler, id string, config kuba.Config, cookie1,
+	ch *challengeHandler, id string, config game.Config, cookie1,
 	cookie2 *http.Cookie) (string, error) {
 	if _, ok := cr.challenges[id]; !ok {
 		// ???? challenge doesn't exist!

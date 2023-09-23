@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"kuba"
+	"game"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,13 +15,13 @@ func TestNewChallengeHandler(t *testing.T) {
 	var _ http.Handler = (*challengeHandler)(nil)
 
 	cb := func(
-		*challengeHandler, kuba.Config, *http.Cookie, *http.Cookie) (
+		*challengeHandler, game.Config, *http.Cookie, *http.Cookie) (
 		string, error) {
 		return "", nil
 	}
 
 	ch, err :=
-		newChallengeHandler(fakeWhiteCookie(), kuba.Config{time.Minute}, cb)
+		newChallengeHandler(fakeWhiteCookie(), game.Config{time.Minute}, cb)
 	if err != nil {
 		t.Error(err)
 	}
@@ -36,7 +36,7 @@ func TestPostJoinValid(t *testing.T) {
 
 	callbackCalled := false
 	cb := func(
-		ch *challengeHandler, c kuba.Config, w *http.Cookie, b *http.Cookie) (
+		ch *challengeHandler, c game.Config, w *http.Cookie, b *http.Cookie) (
 		string, error) {
 		if w.Value != white.Value {
 			t.Error("white cookie did not match expectation")
@@ -48,7 +48,7 @@ func TestPostJoinValid(t *testing.T) {
 		return "", nil
 	}
 
-	ch, err := newChallengeHandler(white, kuba.Config{time.Minute}, cb)
+	ch, err := newChallengeHandler(white, game.Config{time.Minute}, cb)
 	if err != nil {
 		t.Error(err)
 	}
@@ -91,13 +91,13 @@ func TestPostJoinNoCookie(t *testing.T) {
 
 	callbackCalled := false
 	cb := func(
-		*challengeHandler, kuba.Config, *http.Cookie, *http.Cookie) (
+		*challengeHandler, game.Config, *http.Cookie, *http.Cookie) (
 		string, error) {
 		callbackCalled = true
 		return "", nil
 	}
 
-	ch, err := newChallengeHandler(white, kuba.Config{time.Minute}, cb)
+	ch, err := newChallengeHandler(white, game.Config{time.Minute}, cb)
 	if err != nil {
 		t.Error(err)
 	}
@@ -130,13 +130,13 @@ func TestPostJoinSameCookie(t *testing.T) {
 
 	callbackCalled := false
 	cb := func(
-		*challengeHandler, kuba.Config, *http.Cookie, *http.Cookie) (
+		*challengeHandler, game.Config, *http.Cookie, *http.Cookie) (
 		string, error) {
 		callbackCalled = true
 		return "", nil
 	}
 
-	ch, err := newChallengeHandler(white, kuba.Config{time.Minute}, cb)
+	ch, err := newChallengeHandler(white, game.Config{time.Minute}, cb)
 	if err != nil {
 		t.Error(err)
 	}
@@ -171,13 +171,13 @@ func getAcceptedChallenge() (*challengeHandler, error) {
 
 	callbackCalled := false
 	cb := func(
-		*challengeHandler, kuba.Config, *http.Cookie, *http.Cookie) (
+		*challengeHandler, game.Config, *http.Cookie, *http.Cookie) (
 		string, error) {
 		callbackCalled = true
 		return "", nil
 	}
 
-	ch, err := newChallengeHandler(white, kuba.Config{time.Minute}, cb)
+	ch, err := newChallengeHandler(white, game.Config{time.Minute}, cb)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +251,7 @@ func TestIntegrationWithGameRouter(t *testing.T) {
 	cr := newChallengeRouter("/", gr.addGame)
 
 	// add challenge
-	b, err := json.Marshal(kuba.Config{TimeControl: 1 * time.Minute})
+	b, err := json.Marshal(game.Config{TimeControl: 1 * time.Minute})
 	if err != nil {
 		t.Error(err)
 	}
@@ -316,7 +316,7 @@ func TestIntegrationWithGameRouter(t *testing.T) {
 
 func TestInvalidConfig(t *testing.T) {
 	ch, err :=
-		newChallengeHandler(fakeWhiteCookie(), kuba.Config{TimeControl: 0}, nil)
+		newChallengeHandler(fakeWhiteCookie(), game.Config{TimeControl: 0}, nil)
 	if err == nil {
 		t.Error("shouldn't be able to make a game with zero time")
 	}

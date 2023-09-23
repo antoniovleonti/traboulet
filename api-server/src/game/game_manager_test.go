@@ -1,4 +1,4 @@
-package kuba
+package game
 
 import (
 	"net/http"
@@ -24,20 +24,20 @@ func fakeBlackCookie() *http.Cookie {
 	return &c
 }
 
-func TestNewKubaManager(t *testing.T) {
-	km, err := NewKubaManager(
+func TestNewGameManager(t *testing.T) {
+	gm, err := NewGameManager(
 		Config{TimeControl: time.Minute}, fakeWhiteCookie(), fakeBlackCookie(),
 		nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(km.cookieToUser) != 2 {
+	if len(gm.cookieToUser) != 2 {
 		t.Error("num users did not match expectation")
 	}
 
 	used := make(map[AgentColor]bool)
-	for _, v := range km.cookieToUser {
+	for _, v := range gm.cookieToUser {
 		used[v.color] = true
 	}
 
@@ -47,7 +47,7 @@ func TestNewKubaManager(t *testing.T) {
 }
 
 func TestTryMove(t *testing.T) {
-	km, err := NewKubaManager(
+	gm, err := NewGameManager(
 		Config{TimeControl: time.Minute}, fakeWhiteCookie(), fakeBlackCookie(),
 		nil, nil)
 	if err != nil {
@@ -67,7 +67,7 @@ func TestTryMove(t *testing.T) {
 		testCase{m: Move{X: 0, Y: 1, D: DirDown}, a: agentWhite, valid: true},
 	}
 	for idx, tc := range testCases {
-		actual := km.TryMove(tc.m, km.colorToUser[tc.a].cookie)
+		actual := gm.TryMove(tc.m, gm.colorToUser[tc.a].cookie)
 		if (actual == nil) != tc.valid {
 			t.Errorf("testCases[%d]: expected %t, got %t\n", idx, tc.valid, actual)
 		}
@@ -75,25 +75,25 @@ func TestTryMove(t *testing.T) {
 }
 
 func TestTryResign(t *testing.T) {
-	km, err := NewKubaManager(
+	gm, err := NewGameManager(
 		Config{TimeControl: 600 * time.Second}, fakeWhiteCookie(),
 		fakeBlackCookie(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if km == nil {
+	if gm == nil {
 		t.Error("manager is nil")
 	}
 
-	if !km.TryResign(km.GetWhiteCookie()) {
+	if !gm.TryResign(gm.GetWhiteCookie()) {
 		t.Error("couldn't resign with white player")
 	}
-	if km.state.status != statusBlackWon {
+	if gm.state.status != statusBlackWon {
 		t.Errorf("unexpected status; expected %d, got %d",
-			statusBlackWon, km.state.status)
+			statusBlackWon, gm.state.status)
 	}
 
-	if km.TryResign(km.GetBlackCookie()) {
+	if gm.TryResign(gm.GetBlackCookie()) {
 		t.Error("Was able to resign with black after game was already over!")
 	}
 }

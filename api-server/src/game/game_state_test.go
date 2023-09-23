@@ -1,4 +1,4 @@
-package kuba
+package game
 
 import (
 	"testing"
@@ -6,19 +6,19 @@ import (
 	// "fmt"
 )
 
-func TestCreateDefaultKubaState(t *testing.T) {
-	kubaWClock, err := newKubaGame(
+func TestCreateDefaultGameState(t *testing.T) {
+	gsWClock, err := newGameState(
 		Config{TimeControl: 60 * time.Second}, nil, nil, 30*time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if kubaWClock == nil {
-		t.Error("var kuba should not be nil")
+	if gsWClock == nil {
+		t.Error("var gs should not be nil")
 	}
 }
 
 func TestIsInBounds(t *testing.T) {
-	kuba, err := newKubaGame(
+	gs, err := newGameState(
 		Config{TimeControl: time.Minute}, nil, nil, 30*time.Second)
 	if err != nil {
 		t.Fatal(err)
@@ -38,14 +38,14 @@ func TestIsInBounds(t *testing.T) {
 	}
 
 	for idx, testCase := range inBoundsCases {
-		if !kuba.isInBounds(testCase[0], testCase[1]) {
+		if !gs.isInBounds(testCase[0], testCase[1]) {
 			t.Errorf("inBoundsCases[%d] (%d, %d) is out of bounds.",
 				idx, testCase[0], testCase[1])
 		}
 	}
 
 	for idx, testCase := range outOfBoundsCases {
-		if kuba.isInBounds(testCase[0], testCase[1]) {
+		if gs.isInBounds(testCase[0], testCase[1]) {
 			t.Errorf("outOfBoundsCases[%d] (%d, %d) is in bounds.",
 				idx, testCase[0], testCase[1])
 		}
@@ -56,7 +56,7 @@ func TestValidateMove(t *testing.T) {
 	// shorter names
 	var B, W, R, x Marble = marbleBlack, marbleWhite, marbleRed, marbleNil
 
-	kuba := kubaGame{
+	gs := gameState{
 		board: [][]Marble{
 			{W, W, W, W, W, W, W},
 			{W, W, x, W, W, W, W},
@@ -90,12 +90,12 @@ func TestValidateMove(t *testing.T) {
 	}
 
 	for idx, valid := range validCases {
-		if !kuba.ValidateMove(valid) {
+		if !gs.ValidateMove(valid) {
 			t.Errorf("validCases[%d] was considered invalid", idx)
 		}
 	}
 	for idx, invalid := range invalidCases {
-		if kuba.ValidateMove(invalid) {
+		if gs.ValidateMove(invalid) {
 			t.Errorf("invalidCases[%d] was considered valid", idx)
 		}
 	}
@@ -105,7 +105,7 @@ func TestCantPushOffEdge(t *testing.T) {
 	// shorter names
 	var B, W, R, x Marble = marbleBlack, marbleWhite, marbleRed, marbleNil
 
-	kuba := kubaGame{
+	gs := gameState{
 		board: [][]Marble{
 			{x, W, x, B, x, x, x},
 			{x, x, R, x, W, x, B},
@@ -120,13 +120,13 @@ func TestCantPushOffEdge(t *testing.T) {
 		posToCount:   make(map[string]int),
 	}
 
-	if kuba.ValidateMove(Move{X: 1, Y: 6, D: DirLeft}) {
+	if gs.ValidateMove(Move{X: 1, Y: 6, D: DirLeft}) {
 		t.Error("Could push own marble off")
 	}
 }
 
 func TestExecuteMove(t *testing.T) {
-	kuba, err := newKubaGame(
+	gs, err := newGameState(
 		Config{TimeControl: 500 * time.Millisecond}, nil, nil, 30*time.Second)
 	if err != nil {
 		t.Fatal(err)
@@ -168,33 +168,33 @@ func TestExecuteMove(t *testing.T) {
 	playTestCases := func(moves []moveTest) {
 		// For diffing scores between test cases
 		prevScores := make(map[AgentColor]int)
-		prevPlayer := kuba.whoseTurn
+		prevPlayer := gs.whoseTurn
 
 		for idx, testCase := range moves {
 			time.Sleep(testCase.sleep)
-			if ok := kuba.ExecuteMove(testCase.move); ok != testCase.valid {
+			if ok := gs.ExecuteMove(testCase.move); ok != testCase.valid {
 				t.Errorf("moves[%d]: expected valid == %t, got %t",
 					idx, testCase.valid, ok)
 			}
 
 			if testCase.valid {
-				if kuba.lastMove == nil ||
-					kuba.lastMove.X != testCase.move.X ||
-					kuba.lastMove.Y != testCase.move.Y ||
-					kuba.lastMove.D != testCase.move.D {
+				if gs.lastMove == nil ||
+					gs.lastMove.X != testCase.move.X ||
+					gs.lastMove.Y != testCase.move.Y ||
+					gs.lastMove.D != testCase.move.D {
 					t.Error("last move did not match expectation")
 				}
 			}
 
-			score_diff := prevScores[prevPlayer] != kuba.agents[prevPlayer].score
+			score_diff := prevScores[prevPlayer] != gs.agents[prevPlayer].score
 			if testCase.score && !score_diff {
 				t.Errorf("moves[%d]: expected score, but score didn't change", idx)
 			} else if !testCase.score && score_diff {
 				t.Errorf("moves[%d]: expected no score, but score changed", idx)
 			}
 
-			prevPlayer = kuba.whoseTurn
-			for k, v := range kuba.agents {
+			prevPlayer = gs.whoseTurn
+			for k, v := range gs.agents {
 				prevScores[k] = v.score
 			}
 		}
@@ -204,9 +204,9 @@ func TestExecuteMove(t *testing.T) {
 
 func TestUpdateStatus(t *testing.T) {
 	type TestCase struct {
-		// No need to create a map for the kubaGame; this will be handled before
+		// No need to create a map for the gameState; this will be handled before
 		// the test happens
-		kuba               kubaGame
+		gs                 gameState
 		overrideWhiteScore int
 		overrideBlackScore int
 		status             Status
@@ -216,7 +216,7 @@ func TestUpdateStatus(t *testing.T) {
 
 	testCases := []TestCase{
 		{ // No valid moves for white
-			kuba: kubaGame{
+			gs: gameState{
 				board:        [][]Marble{{W, W}, {W, W}},
 				winThreshold: 7,
 				whoseTurn:    agentWhite,
@@ -224,7 +224,7 @@ func TestUpdateStatus(t *testing.T) {
 			status: statusBlackWon,
 		},
 		{ // No valid moves for black (lost all marbles)
-			kuba: kubaGame{
+			gs: gameState{
 				board:        [][]Marble{{W, x}, {x, x}},
 				winThreshold: 7,
 				whoseTurn:    agentBlack,
@@ -232,7 +232,7 @@ func TestUpdateStatus(t *testing.T) {
 			status: statusWhiteWon,
 		},
 		{ // Win by score (white)
-			kuba: kubaGame{
+			gs: gameState{
 				board:        [][]Marble{{W, x}, {x, B}},
 				winThreshold: 7,
 				whoseTurn:    agentBlack,
@@ -241,7 +241,7 @@ func TestUpdateStatus(t *testing.T) {
 			status:             statusWhiteWon,
 		},
 		{ // Win by score (white)
-			kuba: kubaGame{
+			gs: gameState{
 				board:        [][]Marble{{W, x}, {x, B}},
 				winThreshold: 7,
 				whoseTurn:    agentWhite,
@@ -250,7 +250,7 @@ func TestUpdateStatus(t *testing.T) {
 			status:             statusBlackWon,
 		},
 		{ // No win
-			kuba: kubaGame{
+			gs: gameState{
 				board:        [][]Marble{{W, x}, {x, B}},
 				winThreshold: 7,
 				whoseTurn:    agentWhite,
@@ -260,21 +260,21 @@ func TestUpdateStatus(t *testing.T) {
 	}
 
 	for idx, test := range testCases {
-		test.kuba.agents = make(map[AgentColor]*agent)
-		test.kuba.agents[agentWhite] = &agent{
+		test.gs.agents = make(map[AgentColor]*agent)
+		test.gs.agents[agentWhite] = &agent{
 			score: test.overrideWhiteScore,
 		}
-		test.kuba.agents[agentBlack] = &agent{
+		test.gs.agents[agentBlack] = &agent{
 			score: test.overrideBlackScore,
 		}
-		if actual := test.kuba.updateStatus(); actual != test.status {
+		if actual := test.gs.updateStatus(); actual != test.status {
 			t.Errorf("testCases[%d]: status %d != %d", idx, actual, test.status)
 		}
-    if test.status != statusOngoing && test.kuba.whoseTurn != agentNil {
-      t.Errorf(
-        "testCases[%d]: game not ongoing; expected whoseTurn to be agentNil, " +
-        "got %s", idx, test.kuba.whoseTurn.String())
-    }
+		if test.status != statusOngoing && test.gs.whoseTurn != agentNil {
+			t.Errorf(
+				"testCases[%d]: game not ongoing; expected whoseTurn to be agentNil, "+
+					"got %s", idx, test.gs.whoseTurn.String())
+		}
 	}
 }
 
@@ -284,12 +284,12 @@ func TestResign(t *testing.T) {
 		onGameOver := func() {
 			onGameOverCalled = true
 		}
-		kuba, err := newKubaGame(
+		gs, err := newGameState(
 			Config{TimeControl: 1 * time.Minute}, nil, onGameOver, 30*time.Second)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !kuba.resign(c) {
+		if !gs.resign(c) {
 			t.Error("couldn't resign")
 		}
 		var expectedStatus Status
@@ -299,7 +299,7 @@ func TestResign(t *testing.T) {
 			expectedStatus = statusWhiteWon
 		}
 
-		if kuba.status != expectedStatus {
+		if gs.status != expectedStatus {
 			t.Error("resigning did not yield expected status")
 		}
 
@@ -315,7 +315,7 @@ func TestDrawByRepetition(t *testing.T) {
 
 	// This is a draw -- neither player has a way to force a win. In fact, if
 	// either player breaks the repetition (a3r b2l b3l a2r...), they will lose.
-	kuba := kubaGame{
+	gs := gameState{
 		board: [][]Marble{
 			{R, x, x},
 			{x, B, x},
@@ -339,12 +339,12 @@ func TestDrawByRepetition(t *testing.T) {
 	}
 
 	for idx, move := range repeat {
-		if !kuba.ExecuteMove(move) {
+		if !gs.ExecuteMove(move) {
 			t.Errorf("move[%d] was considered invalid", idx)
 		}
 	}
 
-	if kuba.status != statusDraw {
+	if gs.status != statusDraw {
 		t.Error("expected draw")
 	}
 }
@@ -354,16 +354,16 @@ func TestNotifyOutOfTime(t *testing.T) {
 	timeoutCb := func() {
 		done <- struct{}{}
 	}
-	kuba, err := newKubaGame(
+	gs, err := newGameState(
 		Config{TimeControl: 2 * time.Millisecond}, timeoutCb, nil,
 		1*time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
 	}
-	kuba.ExecuteMove(Move{X: 0, Y: 0, D: DirDown})
+	gs.ExecuteMove(Move{X: 0, Y: 0, D: DirDown})
 	// Do nothing... wait on black to timeout
 	<-done
-	if kuba.status != statusWhiteWon {
+	if gs.status != statusWhiteWon {
 		t.Error("expected black to timeout and white to win")
 	}
 }
@@ -373,7 +373,7 @@ func TestFirstMoveDeadline(t *testing.T) {
 	timeoutCb := func() {
 		done <- struct{}{}
 	}
-	kuba, err := newKubaGame(
+	gs, err := newGameState(
 		Config{TimeControl: 1 * time.Millisecond}, timeoutCb, nil,
 		1*time.Millisecond)
 	if err != nil {
@@ -383,8 +383,8 @@ func TestFirstMoveDeadline(t *testing.T) {
 	// (do nothing)
 
 	<-done
-	if kuba.status != statusAborted {
-		t.Errorf("expected aborted status; got %d", kuba.status)
+	if gs.status != statusAborted {
+		t.Errorf("expected aborted status; got %d", gs.status)
 	}
 }
 
@@ -395,12 +395,12 @@ func TestInvalidTimeControl(t *testing.T) {
 		0 * time.Minute,
 	}
 	for _, tc := range times {
-		kuba, err := newKubaGame(
+		gs, err := newGameState(
 			Config{TimeControl: tc}, nil, nil, 30*time.Second)
 		if err == nil {
 			t.Error(err)
 		}
-		if kuba != nil {
+		if gs != nil {
 			t.Errorf("expected error when creating game with time %s", tc.String())
 		}
 	}

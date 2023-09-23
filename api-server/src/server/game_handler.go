@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/antoniovleonti/sse"
 	"github.com/julienschmidt/httprouter"
-	"kuba"
+	"game"
 	"log"
 	"net/http"
 	"sync"
@@ -15,7 +15,7 @@ import (
 // that any other games exist (accepts requests for endpoints like "/state/").
 // This allows for things like writing a single-game server for testing.
 type gameHandler struct {
-	km                *kuba.KubaManager
+	gm                *game.GameManager
 	router            *httprouter.Router
 	pub               publisher
 	completionTime    *time.Time
@@ -24,19 +24,19 @@ type gameHandler struct {
 }
 
 func newGameHandler(
-	deleteChallengeCb deleteChallengeFn, config kuba.Config,
+	deleteChallengeCb deleteChallengeFn, config game.Config,
 	white, black *http.Cookie) (*gameHandler, error) {
 	gh := gameHandler{
 		router:            httprouter.New(),
 		pub:               publisher{},
 		deleteChallengeCb: deleteChallengeCb,
 	}
-	km, err :=
-		kuba.NewKubaManager(config, white, black, gh.publishUpdate, gh.markComplete)
+	gm, err :=
+		game.NewGameManager(config, white, black, gh.publishUpdate, gh.markComplete)
 	if err != nil {
 		return nil, err
 	}
-	gh.km = km
+	gh.gm = gm
 
 	gh.router.GET("/event-stream", gh.getEventStream)
 	gh.router.GET("/state", gh.getState)
@@ -49,7 +49,7 @@ func newGameHandler(
 }
 
 func (gh *gameHandler) publishUpdate() {
-	b, err := json.Marshal(gh.km)
+	b, err := json.Marshal(gh.gm)
 	if err != nil {
 		panic("couldn't marshal game state")
 	}
@@ -100,13 +100,13 @@ func (gh *gameHandler) getEventStream(
 func (gh *gameHandler) getState(
 	w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(gh.km)
+	json.NewEncoder(w).Encode(gh.gm)
 }
 
 func (gh *gameHandler) postMove(
 	w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	// Parse body.
-	var move kuba.Move
+	var move game.Move
 	err := json.NewDecoder(r.Body).Decode(&move)
 	if err != nil {
 		http.Error(w, "Could not parse move: "+err.Error(), http.StatusBadRequest)
@@ -119,7 +119,7 @@ func (gh *gameHandler) postMove(
 		return
 	}
 
-	if err = gh.km.TryMove(move, c[0]); err != nil {
+	if err = gh.gm.TryMove(move, c[0]); err != nil {
 		http.Error(w, "Could not execute move: "+err.Error(),
 			http.StatusBadRequest)
 		return
@@ -137,7 +137,7 @@ func (gh *gameHandler) postResignation(
 		return
 	}
 
-	if !gh.km.TryResign(c[0]) {
+	if !gh.gm.TryResign(c[0]) {
 		http.Error(w, "Could not resign.", http.StatusBadRequest)
 		return
 	}

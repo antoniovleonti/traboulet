@@ -1,7 +1,7 @@
 package server
 
 import (
-	"kuba"
+	"game"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,7 +21,7 @@ func TestAddGame(t *testing.T) {
 	gr := newGameRouter("/")
 
 	_, err := gr.addGame(
-		func() {}, kuba.Config{TimeControl: 1 * time.Minute},
+		func() {}, game.Config{TimeControl: 1 * time.Minute},
 		fakeWhiteCookie(), fakeBlackCookie())
 	if err != nil {
 		t.Error(err)
@@ -36,7 +36,7 @@ func makeRouterWithTestGame() (*gameRouter, error) {
 	gr := newGameRouter("/")
 
 	game, err := newGameHandler(
-		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		return nil, err

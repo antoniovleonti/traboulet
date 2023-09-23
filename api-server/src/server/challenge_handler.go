@@ -3,7 +3,7 @@ package server
 import (
 	"encoding/json"
 	"github.com/julienschmidt/httprouter"
-	"kuba"
+	"game"
 	"net/http"
 	"sync"
 	"time"
@@ -14,13 +14,13 @@ import (
 // refresh or whatever-- details of what is communicated to the client is kind
 // of none of this file's business), and probably dispose of this handler.
 type challengeAcceptedCb func(
-	*challengeHandler, kuba.Config, *http.Cookie, *http.Cookie) (string, error)
+	*challengeHandler, game.Config, *http.Cookie, *http.Cookie) (string, error)
 
 type challengeHandler struct {
 	router              *httprouter.Router
 	creator             *http.Cookie
 	timestamp           time.Time
-	config              kuba.Config
+	config              game.Config
 	pub                 publisher
 	onChallengeAccepted challengeAcceptedCb
 	mutex               sync.RWMutex
@@ -29,12 +29,12 @@ type challengeHandler struct {
 }
 
 type challengeHandlerView struct {
-	Config    kuba.Config `json:"config"`
+	Config    game.Config `json:"config"`
 	CreatorID string      `json:"creatorID"`
 }
 
 func newChallengeHandler(
-	c *http.Cookie, config kuba.Config,
+	c *http.Cookie, config game.Config,
 	onChallengeAccepted challengeAcceptedCb) (*challengeHandler, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err

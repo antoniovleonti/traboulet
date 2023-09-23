@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/julienschmidt/httprouter"
-	"kuba"
+	"game"
 	"log"
 	mrand "math/rand"
 	"net/http"
@@ -69,7 +69,7 @@ func (gr *gameRouter) forwardToHandler(
 }
 
 func (gr *gameRouter) addGame(
-	deleteChallengeCb deleteChallengeFn, config kuba.Config,
+	deleteChallengeCb deleteChallengeFn, config game.Config,
 	cookie1, cookie2 *http.Cookie) (string, error) {
 	gr.mutex.Lock()
 	defer gr.mutex.Unlock()

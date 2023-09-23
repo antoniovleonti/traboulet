@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/r3labs/sse/v2"
-	"kuba"
+	"game"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -36,7 +36,7 @@ func TestNewGameHandler(t *testing.T) {
 	var _ http.Handler = (*gameHandler)(nil)
 
 	gh, err := newGameHandler(
-		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Error(err)
@@ -48,7 +48,7 @@ func TestNewGameHandler(t *testing.T) {
 
 func TestGetState(t *testing.T) {
 	gh, err := newGameHandler(
-		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
@@ -66,7 +66,7 @@ func TestGetState(t *testing.T) {
 	// directly and pass in our Request and ResponseRecorder.
 	gh.ServeHTTP(rr, req)
 	// Check the response body is what we expect.
-	var actual kuba.ClientView
+	var actual game.ClientView
 	decoder := json.NewDecoder(rr.Body)
 	err = decoder.Decode(&actual)
 	if err != nil {
@@ -129,7 +129,7 @@ func postMove(t *testing.T, gh *gameHandler, body []byte,
 
 func TestPostValidMove(t *testing.T) {
 	gh, err := newGameHandler(
-		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
@@ -139,18 +139,18 @@ func TestPostValidMove(t *testing.T) {
 	}
 
 	// Create the body
-	move := kuba.Move{X: 0, Y: 0, D: kuba.DirRight}
+	move := game.Move{X: 0, Y: 0, D: game.DirRight}
 	b, err := json.Marshal(move)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	postMove(t, gh, b, []*http.Cookie{gh.km.GetWhiteCookie()}, http.StatusOK)
+	postMove(t, gh, b, []*http.Cookie{gh.gm.GetWhiteCookie()}, http.StatusOK)
 }
 
 func TestPostInvalidMove(t *testing.T) {
 	gh, err := newGameHandler(
-		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
@@ -159,13 +159,13 @@ func TestPostInvalidMove(t *testing.T) {
 		t.Error("game handler is nil")
 	}
 
-	postMove(t, gh, []byte("blah"), []*http.Cookie{gh.km.GetWhiteCookie()},
+	postMove(t, gh, []byte("blah"), []*http.Cookie{gh.gm.GetWhiteCookie()},
 		http.StatusBadRequest)
 }
 
 func TestPostMoveNoCookie(t *testing.T) {
 	gh, err := newGameHandler(
-		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
@@ -175,7 +175,7 @@ func TestPostMoveNoCookie(t *testing.T) {
 	}
 
 	// Create the body
-	move := kuba.Move{X: 0, Y: 0, D: kuba.DirRight}
+	move := game.Move{X: 0, Y: 0, D: game.DirRight}
 	b, err := json.Marshal(move)
 	if err != nil {
 		t.Fatal(err)
@@ -186,7 +186,7 @@ func TestPostMoveNoCookie(t *testing.T) {
 
 func TestPostMoveEmptyBody(t *testing.T) {
 	gh, err := newGameHandler(
-		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
@@ -195,13 +195,13 @@ func TestPostMoveEmptyBody(t *testing.T) {
 		t.Error("game handler is nil")
 	}
 
-	postMove(t, gh, []byte(""), []*http.Cookie{gh.km.GetWhiteCookie()},
+	postMove(t, gh, []byte(""), []*http.Cookie{gh.gm.GetWhiteCookie()},
 		http.StatusBadRequest)
 }
 
 func TestSendKeepAlive(t *testing.T) {
 	gh, err := newGameHandler(
-		func() {}, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
@@ -249,7 +249,7 @@ func TestDeleteChallenge(t *testing.T) {
 		cbCalled = true
 	}
 	gh, _ := newGameHandler(
-		cb, kuba.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		cb, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 
 	gh.DeleteChallenge()

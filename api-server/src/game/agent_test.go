@@ -1,4 +1,4 @@
-package kuba
+package game
 
 import (
 	"testing"

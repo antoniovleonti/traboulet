@@ -3,7 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"kuba"
+	"game"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,7 +23,7 @@ func TestPostChallenge(t *testing.T) {
 	cr := newChallengeRouter("/", nil)
 
 	// create body
-	config := kuba.Config{10 * time.Minute}
+	config := game.Config{10 * time.Minute}
 	b, err := json.Marshal(config)
 	if err != nil {
 		t.Fatal(err)
@@ -56,7 +56,7 @@ func TestHandleChallengeRequestForwarding(t *testing.T) {
 	cr := newChallengeRouter("/", nil)
 
 	challenge, err :=
-		newChallengeHandler(fakeWhiteCookie(), kuba.Config{time.Minute}, nil)
+		newChallengeHandler(fakeWhiteCookie(), game.Config{time.Minute}, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -84,11 +84,11 @@ func TestGetChallenges(t *testing.T) {
 	type challengeParams struct {
 		s      string
 		cookie *http.Cookie
-		config kuba.Config
+		config game.Config
 	}
 
 	newChallengeParams := func(
-		s string, cookie *http.Cookie, config kuba.Config) *challengeParams {
+		s string, cookie *http.Cookie, config game.Config) *challengeParams {
 		cp := challengeParams{
 			s:      s,
 			cookie: cookie,
@@ -98,11 +98,11 @@ func TestGetChallenges(t *testing.T) {
 	}
 
 	paramsList := []*challengeParams{
-		newChallengeParams("a", fakeWhiteCookie(), kuba.Config{time.Minute}),
+		newChallengeParams("a", fakeWhiteCookie(), game.Config{time.Minute}),
 		newChallengeParams(
-			"b", fakeWhiteCookie(), kuba.Config{time.Minute}),
+			"b", fakeWhiteCookie(), game.Config{time.Minute}),
 		newChallengeParams(
-			"c", fakeWhiteCookie(), kuba.Config{time.Hour}),
+			"c", fakeWhiteCookie(), game.Config{time.Hour}),
 	}
 
 	for _, params := range paramsList {
@@ -178,7 +178,7 @@ func TestPostChallengeInvalidConfig(t *testing.T) {
 	cr := newChallengeRouter("/", nil)
 
 	// create body
-	config := kuba.Config{}
+	config := game.Config{}
 	b, err := json.Marshal(config)
 	if err != nil {
 		t.Fatal(err)

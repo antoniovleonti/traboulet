@@ -1,4 +1,4 @@
-package kuba
+package game
 
 import (
 	"encoding/json"
@@ -36,81 +36,81 @@ type ClientView struct {
 // Handles mapping cookie -> color (black / white) & ensuring players only move
 // when it's their turn to do so (the state validator only checks that it is the
 // correct marble color being moved, has no concept of "who" moved it).
-type KubaManager struct {
-	state        *kubaGame
+type GameManager struct {
+	state        *gameState
 	cookieToUser map[string]*User // "string" key is serialized cookie
 	colorToUser  map[AgentColor]*User
 }
 
-func NewKubaManager(
+func NewGameManager(
 	config Config, white, black *http.Cookie, onAsyncUpdate func(),
-	onGameOver func()) (*KubaManager, error) {
+	onGameOver func()) (*GameManager, error) {
 	if white == nil {
 		return nil, errors.New("Missing white cookie")
 	}
 	if black == nil {
 		return nil, errors.New("Missing black cookie")
 	}
-	state, err := newKubaGame(config, onAsyncUpdate, onGameOver, 10*time.Minute)
+	state, err := newGameState(config, onAsyncUpdate, onGameOver, 10*time.Minute)
 	if err != nil {
 		return nil, err
 	}
-	km := &KubaManager{
+	gm := &GameManager{
 		state:        state,
 		cookieToUser: make(map[string]*User),
 		colorToUser:  make(map[AgentColor]*User),
 	}
-	km.setUser(agentWhite, white)
-	km.setUser(agentBlack, black)
-	return km, nil
+	gm.setUser(agentWhite, white)
+	gm.setUser(agentBlack, black)
+	return gm, nil
 }
 
 // For tests
-func (km *KubaManager) GetWhiteCookie() *http.Cookie {
-	return km.colorToUser[agentWhite].cookie
+func (gm *GameManager) GetWhiteCookie() *http.Cookie {
+	return gm.colorToUser[agentWhite].cookie
 }
 
-func (km *KubaManager) GetBlackCookie() *http.Cookie {
-	return km.colorToUser[agentBlack].cookie
+func (gm *GameManager) GetBlackCookie() *http.Cookie {
+	return gm.colorToUser[agentBlack].cookie
 }
 
-func (km *KubaManager) setUser(color AgentColor, cookie *http.Cookie) bool {
+func (gm *GameManager) setUser(color AgentColor, cookie *http.Cookie) bool {
 	u := User{
 		cookie: cookie,
 		color:  color,
 	}
-	km.cookieToUser[getKeyFromCookie(cookie)] = &u
-	km.colorToUser[color] = &u
+	gm.cookieToUser[getKeyFromCookie(cookie)] = &u
+	gm.colorToUser[color] = &u
 	return true
 }
 
-func (km *KubaManager) TryMove(m Move, c *http.Cookie) error {
-	user, ok := km.cookieToUser[getKeyFromCookie(c)]
+func (gm *GameManager) TryMove(m Move, c *http.Cookie) error {
+	user, ok := gm.cookieToUser[getKeyFromCookie(c)]
 	if !ok {
 		return errors.New("Cookie not found.")
 	}
-	if user.color != km.state.whoseTurn {
+	if user.color != gm.state.whoseTurn {
 		return errors.New("It is not your turn.")
 	}
-	if !km.state.ExecuteMove(m) {
+	if !gm.state.ExecuteMove(m) {
 		return errors.New("Move was invalid.")
 	}
 	return nil
 }
 
-func (km *KubaManager) TryResign(c *http.Cookie) bool {
-	user, ok := km.cookieToUser[getKeyFromCookie(c)]
+func (gm *GameManager) TryResign(c *http.Cookie) bool {
+	user, ok := gm.cookieToUser[getKeyFromCookie(c)]
 	if !ok {
 		return false
 	}
-	return km.state.resign(user.color)
+	return gm.state.resign(user.color)
 }
 
-func (km KubaManager) GetClientView() ClientView {
+func (gm GameManager) GetClientView() ClientView {
 	colorToPlayer := make(map[string]clientViewPlayer)
 	idToPlayer := make(map[string]clientViewPlayer)
-	for color, user := range km.colorToUser {
-		agent := km.state.agents[color]
+	for color, user := range gm.colorToUser {
+		agent := gm.state.agents[color]
 		player := clientViewPlayer{
 			TimeNs:   agent.time.Nanoseconds(),
 			Deadline: agent.deadline,
@@ -124,21 +124,21 @@ func (km KubaManager) GetClientView() ClientView {
 	}
 
 	return ClientView{
-		Board:             km.state.board,
-		Status:            km.state.status.String(),
-		LastMove:          km.state.lastMove,
-		WhoseTurn:         km.state.whoseTurn.String(),
-		WinThreshold:      km.state.winThreshold,
+		Board:             gm.state.board,
+		Status:            gm.state.status.String(),
+		LastMove:          gm.state.lastMove,
+		WhoseTurn:         gm.state.whoseTurn.String(),
+		WinThreshold:      gm.state.winThreshold,
 		ColorToPlayer:     colorToPlayer,
 		IDToPlayer:        idToPlayer,
-		ValidMoves:        km.state.validMoves,
-		FirstMoveDeadline: km.state.firstMoveDeadline,
-		TimeControl:       km.state.timeControl,
+		ValidMoves:        gm.state.validMoves,
+		FirstMoveDeadline: gm.state.firstMoveDeadline,
+		TimeControl:       gm.state.timeControl,
 	}
 }
 
-func (km KubaManager) MarshalJSON() ([]byte, error) {
-	return json.Marshal(km.GetClientView())
+func (gm GameManager) MarshalJSON() ([]byte, error) {
+	return json.Marshal(gm.GetClientView())
 }
 
 // This way we don't have to worry about what fields the client is / is not

@@ -1,4 +1,4 @@
-package kuba
+package game
 
 import (
 	"time"
@@ -21,8 +21,8 @@ type agent struct {
 
 func (ac AgentColor) String() string {
 	if ac == agentNil {
-    return ""
-  } else if ac == agentWhite {
+		return ""
+	} else if ac == agentWhite {
 		return "WHITE"
 	} else if ac == agentBlack {
 		return "BLACK"

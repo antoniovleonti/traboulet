@@ -1,4 +1,4 @@
-package kuba
+package game
 
 import (
 	"fmt"
@@ -32,7 +32,7 @@ func (s Status) String() string {
 	}
 }
 
-type kubaGame struct {
+type gameState struct {
 	board             BoardT
 	agents            map[AgentColor]*agent
 	ko                *Move
@@ -50,9 +50,9 @@ type kubaGame struct {
 	onGameOver        func()
 }
 
-func newKubaGame(
+func newGameState(
 	config Config, onAsyncUpdate func(), onGameOver func(),
-	firstMoveTimeout time.Duration) (*kubaGame, error) {
+	firstMoveTimeout time.Duration) (*gameState, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func newKubaGame(
 
 	firstMoveDeadline := time.Now().Add(firstMoveTimeout)
 
-	kg := kubaGame{
+	kg := gameState{
 		agents:            agents,
 		board:             startPosition,
 		whoseTurn:         agentWhite,
@@ -98,19 +98,19 @@ func newKubaGame(
 	return &kg, nil
 }
 
-func (kg *kubaGame) boardSize() int {
+func (kg *gameState) boardSize() int {
 	return len(kg.board)
 }
 
-func (kg kubaGame) getPositionString() string {
+func (kg gameState) getPositionString() string {
 	return fmt.Sprintf("%v;%d", kg.board, kg.whoseTurn)
 }
 
-func (kg *kubaGame) isInBounds(x, y int) bool {
+func (kg *gameState) isInBounds(x, y int) bool {
 	return x >= 0 && x < kg.boardSize() && y >= 0 && y < kg.boardSize()
 }
 
-func (kg *kubaGame) ValidateMove(move Move) bool {
+func (kg *gameState) ValidateMove(move Move) bool {
 	// Check the game is not already over
 	if kg.status != statusOngoing {
 		return false
@@ -165,13 +165,13 @@ func (kg *kubaGame) ValidateMove(move Move) bool {
 	return true
 }
 
-func (kg *kubaGame) updateStatus() (newStatus Status) {
-  // If the game is over, it's no one's turn.
-  defer func() {
-    if newStatus != statusOngoing {
-      kg.whoseTurn = agentNil
-    }
-  }()
+func (kg *gameState) updateStatus() (newStatus Status) {
+	// If the game is over, it's no one's turn.
+	defer func() {
+		if newStatus != statusOngoing {
+			kg.whoseTurn = agentNil
+		}
+	}()
 	// Check for preexisting "sticky" status
 	if kg.status != statusOngoing {
 		return kg.status
@@ -198,7 +198,7 @@ func (kg *kubaGame) updateStatus() (newStatus Status) {
 	return statusOngoing
 }
 
-func (kg *kubaGame) ExecuteMove(move Move) bool {
+func (kg *gameState) ExecuteMove(move Move) bool {
 	kg.mutex.Lock()
 	defer kg.mutex.Unlock()
 
@@ -272,7 +272,7 @@ func (kg *kubaGame) ExecuteMove(move Move) bool {
 	return true
 }
 
-func (kg *kubaGame) playerTimeoutCallback() {
+func (kg *gameState) playerTimeoutCallback() {
 	kg.mutex.Lock()
 	defer kg.mutex.Unlock()
 
@@ -290,7 +290,7 @@ func (kg *kubaGame) playerTimeoutCallback() {
 	}
 }
 
-func (kg *kubaGame) firstMoveTimeoutCallback() {
+func (kg *gameState) firstMoveTimeoutCallback() {
 	kg.mutex.Lock()
 	defer kg.mutex.Unlock()
 
@@ -309,7 +309,7 @@ func (kg *kubaGame) firstMoveTimeoutCallback() {
 	}
 }
 
-func (kg *kubaGame) resign(agent AgentColor) bool {
+func (kg *gameState) resign(agent AgentColor) bool {
 	kg.mutex.Lock()
 	defer kg.mutex.Unlock()
 
@@ -326,7 +326,7 @@ func (kg *kubaGame) resign(agent AgentColor) bool {
 
 // Bring the game to a completely inert state-- ensure no timers are gonna fire
 // or anything like that.
-func (kg *kubaGame) teardown() {
+func (kg *gameState) teardown() {
 	if kg.firstMoveTimer != nil {
 		kg.firstMoveTimer.Stop()
 		kg.firstMoveTimer = nil
@@ -336,7 +336,7 @@ func (kg *kubaGame) teardown() {
 	}
 }
 
-func (kg *kubaGame) getValidMoves() []Move {
+func (kg *gameState) getValidMoves() []Move {
 	var moves []Move
 	for x := 0; x < kg.boardSize(); x++ {
 		for y := 0; y < kg.boardSize(); y++ {

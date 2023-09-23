@@ -3,7 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"kuba"
+	"game"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -59,7 +59,7 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 	rr := NewRootRouter()
 
 	// add challenge
-	b, err := json.Marshal(kuba.Config{TimeControl: 1 * time.Minute})
+	b, err := json.Marshal(game.Config{TimeControl: 1 * time.Minute})
 	if err != nil {
 		t.Error(err)
 	}
@@ -123,7 +123,7 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 	}
 
 	// Make a move
-	move := kuba.Move{X: 0, Y: 0, D: kuba.DirRight}
+	move := game.Move{X: 0, Y: 0, D: game.DirRight}
 	bmove, err := json.Marshal(move)
 	if err != nil {
 		t.Fatal(err)
@@ -134,7 +134,7 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 		t.Error(err)
 	}
 	gameID := strings.Split(gamePath, "/")[2]
-	postMoveReq.AddCookie(rr.gameRtr.games[gameID].km.GetWhiteCookie())
+	postMoveReq.AddCookie(rr.gameRtr.games[gameID].gm.GetWhiteCookie())
 	postMoveResp := httptest.NewRecorder()
 	rr.ServeHTTP(postMoveResp, postMoveReq)
 
