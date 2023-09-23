@@ -3,13 +3,13 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"github.com/julienschmidt/httprouter"
 	"game"
+	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
-  "time"
+	"time"
 )
 
 type deleteChallengeFn func()
@@ -68,7 +68,7 @@ func (cr *challengeRouter) forwardToHandler(
 	r.URL = url
 
 	cr.mutex.RLock()
-  ch, ok := cr.challenges[id];
+	ch, ok := cr.challenges[id]
 	cr.mutex.RUnlock()
 
 	if ok && ch != nil {
@@ -124,12 +124,12 @@ func (cr *challengeRouter) getChallenges(
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
 
-  unaccepted := make(map[string]*challengeHandler)
-  for id, ch := range cr.challenges {
-    if !ch.accepted {
-      unaccepted[id] = ch
-    }
-  }
+	unaccepted := make(map[string]*challengeHandler)
+	for id, ch := range cr.challenges {
+		if !ch.accepted {
+			unaccepted[id] = ch
+		}
+	}
 	b, err := json.Marshal(unaccepted)
 	if err != nil {
 		http.Error(
@@ -161,28 +161,28 @@ func (cr *challengeRouter) onChallengeAccepted(
 }
 
 func (cr *challengeRouter) PeriodicallyDeleteOldChallenges(d time.Duration) {
- 	for {
- 		time.Sleep(d)
- 		cr.deleteOldChallenges(d)
- 	}
- }
+	for {
+		time.Sleep(d)
+		cr.deleteOldChallenges(d)
+	}
+}
 
 // Only deletes unaccepted challenges. Accepted challenges stay around so they
 // can redirect to the corresponding game.
- func (cr *challengeRouter) deleteOldChallenges(d time.Duration) {
- 	cr.mutex.Lock()
- 	defer cr.mutex.Unlock()
+func (cr *challengeRouter) deleteOldChallenges(d time.Duration) {
+	cr.mutex.Lock()
+	defer cr.mutex.Unlock()
 
- 	count := 0
- 	for k, challenge := range cr.challenges {
- 		if !challenge.accepted && time.Since(challenge.timestamp) > d {
- 			delete(cr.challenges, k)
- 			count++
- 		}
- 	}
- 	if count > 0 {
- 		log.Printf(
- 			"Cleaned up %d challenge(s) (%d challenges remain)",
- 			count, len(cr.challenges))
- 	}
- }
+	count := 0
+	for k, challenge := range cr.challenges {
+		if !challenge.accepted && time.Since(challenge.timestamp) > d {
+			delete(cr.challenges, k)
+			count++
+		}
+	}
+	if count > 0 {
+		log.Printf(
+			"Cleaned up %d challenge(s) (%d challenges remain)",
+			count, len(cr.challenges))
+	}
+}

@@ -3,8 +3,8 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/r3labs/sse/v2"
 	"game"
+	"github.com/r3labs/sse/v2"
 	"log"
 	"net/http"
 	"net/http/httptest"

@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/julienschmidt/httprouter"
 	"game"
+	"github.com/julienschmidt/httprouter"
 	"log"
 	mrand "math/rand"
 	"net/http"

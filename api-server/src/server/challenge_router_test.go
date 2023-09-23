@@ -112,8 +112,8 @@ func TestGetChallenges(t *testing.T) {
 		}
 		cr.challenges[params.s] = challenge
 	}
-  // Add an accepted challenge
-  cr.challenges["accepted"] = &challengeHandler{ accepted: true }
+	// Add an accepted challenge
+	cr.challenges["accepted"] = &challengeHandler{accepted: true}
 
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
@@ -135,21 +135,21 @@ func TestGetChallenges(t *testing.T) {
 		t.Error(err)
 	}
 	for k, v := range cr.challenges {
-    if k == "accepted" {
-      if _, ok := result["accepted"]; ok {
-        t.Error("expected accepted challenge to not be sent.")
-      }
-    } else {
-      actualv, ok := result[k]
-      if !ok {
-        t.Error("expected key " + k + " to exist in result")
-      }
-      if ok && actualv.Config.TimeControl != v.config.TimeControl {
-        t.Errorf(
-          "time %s does not match expected %s",
-          actualv.Config.TimeControl.String(), v.config.TimeControl.String())
-      }
-    }
+		if k == "accepted" {
+			if _, ok := result["accepted"]; ok {
+				t.Error("expected accepted challenge to not be sent.")
+			}
+		} else {
+			actualv, ok := result[k]
+			if !ok {
+				t.Error("expected key " + k + " to exist in result")
+			}
+			if ok && actualv.Config.TimeControl != v.config.TimeControl {
+				t.Errorf(
+					"time %s does not match expected %s",
+					actualv.Config.TimeControl.String(), v.config.TimeControl.String())
+			}
+		}
 	}
 }
 
@@ -199,33 +199,33 @@ func TestPostChallengeInvalidConfig(t *testing.T) {
 }
 
 func TestDeleteOldChallenges(t *testing.T) {
- 	cr := newChallengeRouter("/", nil)
- 	cr.challenges["too old"] = &challengeHandler{
- 		timestamp: time.Now().Add(-1 * time.Hour),
-		accepted: false,
- 	}
- 	cr.challenges["accepted"] = &challengeHandler{
- 		timestamp: time.Now().Add(-1 * time.Hour),
-		accepted: true,
- 	}
- 	cr.challenges["not too old"] = &challengeHandler{
- 		timestamp: time.Now().Add(-1 * time.Minute),
-		accepted: false,
- 	}
+	cr := newChallengeRouter("/", nil)
+	cr.challenges["too old"] = &challengeHandler{
+		timestamp: time.Now().Add(-1 * time.Hour),
+		accepted:  false,
+	}
+	cr.challenges["accepted"] = &challengeHandler{
+		timestamp: time.Now().Add(-1 * time.Hour),
+		accepted:  true,
+	}
+	cr.challenges["not too old"] = &challengeHandler{
+		timestamp: time.Now().Add(-1 * time.Minute),
+		accepted:  false,
+	}
 
- 	cr.deleteOldChallenges(10 * time.Minute)
+	cr.deleteOldChallenges(10 * time.Minute)
 
- 	if len(cr.challenges) != 2 {
- 		t.Errorf("expected exactly 2 games (got %d)", len(cr.challenges))
- 	}
+	if len(cr.challenges) != 2 {
+		t.Errorf("expected exactly 2 games (got %d)", len(cr.challenges))
+	}
 
- 	if _, ok := cr.challenges["not too old"]; !ok {
- 		t.Error("expected newer challenge to stay")
- 	}
- 	if _, ok := cr.challenges["accepted"]; !ok {
- 		t.Error("expected accepted challenge to stay")
- 	}
- 	if _, ok := cr.challenges["too old"]; ok {
- 		t.Error("expected too old challenge to be deleted")
- 	}
- }
+	if _, ok := cr.challenges["not too old"]; !ok {
+		t.Error("expected newer challenge to stay")
+	}
+	if _, ok := cr.challenges["accepted"]; !ok {
+		t.Error("expected accepted challenge to stay")
+	}
+	if _, ok := cr.challenges["too old"]; ok {
+		t.Error("expected too old challenge to be deleted")
+	}
+}

@@ -2,8 +2,8 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/julienschmidt/httprouter"
 	"game"
+	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"sync"
 	"time"

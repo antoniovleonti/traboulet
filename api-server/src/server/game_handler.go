@@ -2,9 +2,9 @@ package server
 
 import (
 	"encoding/json"
+	"game"
 	"github.com/antoniovleonti/sse"
 	"github.com/julienschmidt/httprouter"
-	"game"
 	"log"
 	"net/http"
 	"sync"
