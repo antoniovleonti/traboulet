@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 	"time"
+  "errors"
 )
 
 type Status int
@@ -32,17 +33,21 @@ func (s Status) String() string {
 	}
 }
 
-type gameState struct {
+type snapshot struct {
 	board             BoardT
+	lastMove          *MoveWMarblesMoved
+	whoseTurn         AgentColor
+}
+
+type gameState struct {
+  history []snapshot
 	agents            map[AgentColor]*agent
 	ko                *Move
-	lastMove          *LastMoveT
-	whoseTurn         AgentColor
 	winThreshold      int
 	timeControl       time.Duration
 	status            Status
-	posToCount        map[string]int // string rep of pos -> # of times it's occured.
-	validMoves        []Move
+	posToCount        map[string]int
+	validMoves        []MoveWMarblesMoved
 	firstMoveDeadline *time.Time
 	firstMoveTimer    *time.Timer
 	mutex             sync.RWMutex
@@ -57,15 +62,21 @@ func newGameState(
 		return nil, err
 	}
 	var x, R, B, W Marble = marbleNil, marbleRed, marbleBlack, marbleWhite
-	startPosition := [][]Marble{
-		{W, W, x, x, x, B, B},
-		{W, W, x, R, x, B, B},
-		{x, x, R, R, R, x, x},
-		{x, R, R, R, R, R, x},
-		{x, x, R, R, R, x, x},
-		{B, B, x, R, x, W, W},
-		{B, B, x, x, x, W, W},
-	}
+	startPosition := []snapshot{
+    snapshot{
+      board: [][]Marble{
+        {W, W, x, x, x, B, B},
+        {W, W, x, R, x, B, B},
+        {x, x, R, R, R, x, x},
+        {x, R, R, R, R, R, x},
+        {x, x, R, R, R, x, x},
+        {B, B, x, R, x, W, W},
+        {B, B, x, x, x, W, W},
+      },
+      whoseTurn: agentWhite,
+      lastMove: nil,
+    },
+  }
 
 	agents := make(map[AgentColor]*agent)
 	agents[agentWhite] = &agent{
@@ -79,10 +90,9 @@ func newGameState(
 
 	firstMoveDeadline := time.Now().Add(firstMoveTimeout)
 
-	kg := gameState{
+	gs := gameState{
+		history:      startPosition,
 		agents:            agents,
-		board:             startPosition,
-		whoseTurn:         agentWhite,
 		winThreshold:      7,
 		timeControl:       config.TimeControl,
 		posToCount:        make(map[string]int),
@@ -90,263 +100,282 @@ func newGameState(
 		onAsyncUpdate:     onAsyncUpdate,
 		onGameOver:        onGameOver,
 	}
-	kg.firstMoveTimer =
-		time.AfterFunc(firstMoveTimeout, kg.firstMoveTimeoutCallback)
+	gs.firstMoveTimer =
+		time.AfterFunc(firstMoveTimeout, gs.firstMoveTimeoutCallback)
 
-	kg.validMoves = kg.getValidMoves()
+	gs.validMoves = gs.getValidMoves()
 
-	return &kg, nil
+	return &gs, nil
 }
 
-func (kg *gameState) boardSize() int {
-	return len(kg.board)
+func (gs gameState) boardsize() int {
+  return len(gs.history[0].board)
 }
 
-func (kg gameState) getPositionString() string {
-	return fmt.Sprintf("%v;%d", kg.board, kg.whoseTurn)
+func (gs *gameState) lastSnapshot() *snapshot {
+  return &gs.history[len(gs.history)-1]
 }
 
-func (kg *gameState) isInBounds(x, y int) bool {
-	return x >= 0 && x < kg.boardSize() && y >= 0 && y < kg.boardSize()
+func (gs gameState) getPositionString() string {
+	return fmt.Sprintf(
+    "%v;%d", gs.lastSnapshot().board, gs.lastSnapshot().whoseTurn)
 }
 
-func (kg *gameState) ValidateMove(move Move) bool {
+func (gs *gameState) isInBounds(x, y int) bool {
+	return x >= 0 && x < gs.boardsize() && y >= 0 && y < gs.boardsize()
+}
+
+func (gs *gameState) ValidateMove(move Move) (*MoveWMarblesMoved, error) {
 	// Check the game is not already over
-	if kg.status != statusOngoing {
-		return false
+	if gs.status != statusOngoing {
+		return nil, errors.New("Game already ended.")
 	}
 
 	// Validate direction
 	if !move.D.isValid() {
-		return false
+		return nil, errors.New("Direction is invalid.")
 	}
 
 	// Check bounds
-	if !kg.isInBounds(move.X, move.Y) ||
-		!kg.isInBounds(move.X+move.dx(), move.Y+move.dy()) {
-		return false
+	if !gs.isInBounds(move.X, move.Y) ||
+		!gs.isInBounds(move.X+move.dx(), move.Y+move.dy()) {
+		return nil, errors.New("Index out of bounds.")
 	}
 
 	// Check that move is in turn
-	if kg.board[move.Y][move.X] != kg.whoseTurn.marble() {
-		return false
+	if gs.lastSnapshot().board[move.Y][move.X] !=
+    gs.lastSnapshot().whoseTurn.marble() {
+		return nil, errors.New("Is not an in-turn marble.")
 	}
 
 	// Check ko rule
-	if kg.ko != nil && move == *kg.ko {
-		return false
+	if gs.ko != nil && move == *gs.ko {
+		return nil, errors.New("Prevented by ko.")
 	}
 
 	// Check that no piece is blocking this move from behind
 	behindx, behindy := move.X-move.dx(), move.Y-move.dy()
-	if kg.isInBounds(behindx, behindy) &&
-		kg.board[behindy][behindx] != marbleNil {
-		return false
+	if gs.isInBounds(behindx, behindy) &&
+		gs.lastSnapshot().board[behindy][behindx] != marbleNil {
+		return nil, errors.New("Blocked by adjacent marble.")
 	}
 
 	// Check that you are not pushing your own piece off the board
 	foundEmpty := false
+  marblesMoved := 1
 	var x, y int = move.X, move.Y
-	for ; kg.isInBounds(x, y); x, y = x+move.dx(), y+move.dy() {
-		if kg.board[y][x] == marbleNil {
+	for ; gs.isInBounds(x, y); x, y = x+move.dx(), y+move.dy() {
+		if gs.lastSnapshot().board[y][x] == marbleNil {
 			foundEmpty = true
 			break
 		}
+    marblesMoved++
 	}
 	if !foundEmpty {
 		// Move back one step to the last valid position
 		y -= move.dy()
 		x -= move.dx()
-		if kg.board[y][x] == kg.whoseTurn.marble() {
-			return false
+		if gs.lastSnapshot().board[y][x] == gs.lastSnapshot().whoseTurn.marble() {
+			return nil, errors.New("Can't push own marble off.")
 		}
 	}
 
-	return true
+  moveWMarblesMoved := MoveWMarblesMoved{
+    X: move.X,
+    Y: move.Y,
+    D: move.D,
+    MarblesMoved: marblesMoved,
+  }
+	return &moveWMarblesMoved, nil
 }
 
-func (kg *gameState) updateStatus() (newStatus Status) {
+func (gs *gameState) updateStatus() {
+  newStatus := statusOngoing
 	// If the game is over, it's no one's turn.
 	defer func() {
+    gs.status = newStatus
 		if newStatus != statusOngoing {
-			kg.whoseTurn = agentNil
+			gs.lastSnapshot().whoseTurn = agentNil
 		}
 	}()
 	// Check for preexisting "sticky" status
-	if kg.status != statusOngoing {
-		return kg.status
+	if gs.status != statusOngoing {
+		newStatus = gs.status
 	}
 
 	// Win by score
-	for t, p := range kg.agents {
-		if p.score >= kg.winThreshold {
-			return t.winStatus()
+	for t, p := range gs.agents {
+		if p.score >= gs.winThreshold {
+			newStatus = t.winStatus()
 		}
 	}
 
 	// Win by entrapment
-	kg.validMoves = kg.getValidMoves()
-	if len(kg.validMoves) == 0 {
-		return kg.whoseTurn.otherAgent().winStatus()
+	gs.validMoves = gs.getValidMoves()
+	if len(gs.validMoves) == 0 {
+		newStatus = gs.lastSnapshot().whoseTurn.otherAgent().winStatus()
 	}
 
 	// Draw by repetition
-	if kg.posToCount[kg.getPositionString()] >= 3 {
-		return statusDraw
+	if gs.posToCount[gs.getPositionString()] >= 3 {
+		newStatus = statusDraw
 	}
-
-	return statusOngoing
 }
 
-func (kg *gameState) ExecuteMove(move Move) bool {
-	kg.mutex.Lock()
-	defer kg.mutex.Unlock()
+func (gs *gameState) ExecuteMove(move Move) bool {
+	gs.mutex.Lock()
+	defer gs.mutex.Unlock()
 
-	if !kg.ValidateMove(move) {
+	if _, err := gs.ValidateMove(move); err != nil {
 		return false
 	}
+
+  board := gs.lastSnapshot().board
 
 	marblesMoved := 0
 	tmp := marbleNil
 	var x, y int = move.X, move.Y
-	for ; kg.isInBounds(x, y); x, y = x+move.dx(), y+move.dy() {
-		kg.board[y][x], tmp = tmp, kg.board[y][x] // swap
+	for ; gs.isInBounds(x, y); x, y = x+move.dx(), y+move.dy() {
+		board[y][x], tmp = tmp, board[y][x]
 		if tmp == marbleNil {
 			break
 		}
 		marblesMoved++
 	}
 	// A red marble was pushed off the board
-	if !kg.isInBounds(x, y) && tmp == marbleRed {
-		kg.agents[kg.whoseTurn].score++
+	if !gs.isInBounds(x, y) && tmp == marbleRed {
+		gs.agents[gs.lastSnapshot().whoseTurn].score++
 	}
 	// Check for ko
-	kg.ko = nil
-	if !kg.isInBounds(x, y) {
+	gs.ko = nil
+	if !gs.isInBounds(x, y) {
 		x -= move.dx()
 		y -= move.dy()
 	}
-	if kg.board[y][x] == kg.whoseTurn.otherAgent().marble() {
-		kg.ko = &Move{
+	if board[y][x] == gs.lastSnapshot().whoseTurn.otherAgent().marble() {
+		gs.ko = &Move{
 			X: x,
 			Y: y,
 			D: move.D.reverse(),
 		}
 	}
 
-	if kg.firstMoveTimer != nil {
-		if !kg.firstMoveTimer.Stop() {
+	if gs.firstMoveTimer != nil {
+		if !gs.firstMoveTimer.Stop() {
 			panic("Ending first move timer failed!")
 		}
-		kg.firstMoveTimer = nil
-		kg.firstMoveDeadline = nil
+		gs.firstMoveTimer = nil
+		gs.firstMoveDeadline = nil
 	}
 
-	if !kg.agents[kg.whoseTurn].endTurn() {
+	if !gs.agents[gs.lastSnapshot().whoseTurn].endTurn() {
 		panic("End player turn failed!")
 	}
 
-	kg.lastMove = &LastMoveT{
-		X:            move.X,
-		Y:            move.Y,
-		D:            move.D,
-		MarblesMoved: marblesMoved,
-	}
+  gs.history = append(gs.history, snapshot{
+    board: board,
+    whoseTurn: gs.lastSnapshot().whoseTurn.otherAgent(),
+    lastMove: &MoveWMarblesMoved{
+      X:            move.X,
+      Y:            move.Y,
+      D:            move.D,
+      MarblesMoved: marblesMoved,
+    },
+	})
 
-	kg.whoseTurn = kg.whoseTurn.otherAgent()
+	gs.posToCount[gs.getPositionString()]++
 
-	kg.posToCount[kg.getPositionString()]++
-
-	kg.status = kg.updateStatus()
-	if kg.status == statusOngoing {
-		if !kg.agents[kg.whoseTurn].startTurn(kg.playerTimeoutCallback) {
+	gs.updateStatus()
+	if gs.status == statusOngoing {
+    agent := gs.agents[gs.lastSnapshot().whoseTurn]
+		if !agent.startTurn(gs.playerTimeoutCallback) {
 			panic("startTurn failed!")
 		}
 	} else {
-		kg.teardown()
-		if kg.onGameOver != nil {
-			kg.onGameOver()
+		gs.teardown()
+		if gs.onGameOver != nil {
+			gs.onGameOver()
 		}
 	}
 
 	return true
 }
 
-func (kg *gameState) playerTimeoutCallback() {
-	kg.mutex.Lock()
-	defer kg.mutex.Unlock()
+func (gs *gameState) playerTimeoutCallback() {
+	gs.mutex.Lock()
+	defer gs.mutex.Unlock()
 
 	// The other team just won
-	kg.status = kg.whoseTurn.otherAgent().winStatus()
+	gs.status = gs.lastSnapshot().whoseTurn.otherAgent().winStatus()
 
-	kg.teardown()
+	gs.teardown()
 
 	// Notify front-end of update
-	if kg.onAsyncUpdate != nil {
-		kg.onAsyncUpdate()
+	if gs.onAsyncUpdate != nil {
+		gs.onAsyncUpdate()
 	}
-	if kg.onGameOver != nil {
-		kg.onGameOver()
+	if gs.onGameOver != nil {
+		gs.onGameOver()
 	}
 }
 
-func (kg *gameState) firstMoveTimeoutCallback() {
-	kg.mutex.Lock()
-	defer kg.mutex.Unlock()
+func (gs *gameState) firstMoveTimeoutCallback() {
+	gs.mutex.Lock()
+	defer gs.mutex.Unlock()
 
 	// The other team just won
-	kg.status = statusAborted
-	kg.firstMoveDeadline = nil
+	gs.status = statusAborted
+	gs.firstMoveDeadline = nil
 
-	kg.teardown()
+	gs.teardown()
 
 	// Notify front-end of update
-	if kg.onAsyncUpdate != nil {
-		kg.onAsyncUpdate()
+	if gs.onAsyncUpdate != nil {
+		gs.onAsyncUpdate()
 	}
-	if kg.onGameOver != nil {
-		kg.onGameOver()
+	if gs.onGameOver != nil {
+		gs.onGameOver()
 	}
 }
 
-func (kg *gameState) resign(agent AgentColor) bool {
-	kg.mutex.Lock()
-	defer kg.mutex.Unlock()
+func (gs *gameState) resign(agent AgentColor) bool {
+	gs.mutex.Lock()
+	defer gs.mutex.Unlock()
 
-	if kg.status != statusOngoing {
+	if gs.status != statusOngoing {
 		return false
 	}
-	kg.status = agent.otherAgent().winStatus()
+	gs.status = agent.otherAgent().winStatus()
 
-	if kg.onGameOver != nil {
-		kg.onGameOver()
+	if gs.onGameOver != nil {
+		gs.onGameOver()
 	}
 	return true
 }
 
 // Bring the game to a completely inert state-- ensure no timers are gonna fire
 // or anything like that.
-func (kg *gameState) teardown() {
-	if kg.firstMoveTimer != nil {
-		kg.firstMoveTimer.Stop()
-		kg.firstMoveTimer = nil
+func (gs *gameState) teardown() {
+	if gs.firstMoveTimer != nil {
+		gs.firstMoveTimer.Stop()
+		gs.firstMoveTimer = nil
 	}
-	for _, a := range kg.agents {
+	for _, a := range gs.agents {
 		a.endTurn()
 	}
 }
 
-func (kg *gameState) getValidMoves() []Move {
-	var moves []Move
-	for x := 0; x < kg.boardSize(); x++ {
-		for y := 0; y < kg.boardSize(); y++ {
-			if kg.board[y][x] != kg.whoseTurn.marble() {
+func (gs *gameState) getValidMoves() []MoveWMarblesMoved {
+	var moves []MoveWMarblesMoved
+	for x := 0; x < gs.boardsize(); x++ {
+		for y := 0; y < gs.boardsize(); y++ {
+			if gs.lastSnapshot().board[y][x] != gs.lastSnapshot().whoseTurn.marble() {
 				continue
 			}
 			for _, dir := range []Direction{DirUp, DirDown, DirLeft, DirRight} {
 				move := Move{X: x, Y: y, D: dir}
-				if kg.ValidateMove(move) {
-					moves = append(moves, move)
+				if fullMove, err := gs.ValidateMove(move); err == nil {
+					moves = append(moves, *fullMove)
 				}
 			}
 		}

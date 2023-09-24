@@ -23,12 +23,12 @@ type clientViewPlayer struct {
 type ClientView struct {
 	Board             BoardT                      `json:"board"`
 	Status            string                      `json:"status"`
-	LastMove          *LastMoveT                  `json:"lastMove"`
-	WhoseTurn         string                      `json:"whoseTurn"` // color of current player
+	LastMove          *MoveWMarblesMoved          `json:"lastMove"`
+	WhoseTurn         string                      `json:"whoseTurn"`
 	WinThreshold      int                         `json:"winThreshold"`
 	ColorToPlayer     map[string]clientViewPlayer `json:"colorToPlayer"`
 	IDToPlayer        map[string]clientViewPlayer `json:"idToPlayer"`
-	ValidMoves        []Move                      `json:"validMoves"`
+	ValidMoves        []MoveWMarblesMoved         `json:"validMoves"`
 	FirstMoveDeadline *time.Time                  `json:"firstMoveDeadline"`
 	TimeControl       time.Duration               `json:"timeControl"`
 }
@@ -89,7 +89,7 @@ func (gm *GameManager) TryMove(m Move, c *http.Cookie) error {
 	if !ok {
 		return errors.New("Cookie not found.")
 	}
-	if user.color != gm.state.whoseTurn {
+	if user.color != gm.state.lastSnapshot().whoseTurn {
 		return errors.New("It is not your turn.")
 	}
 	if !gm.state.ExecuteMove(m) {
@@ -124,10 +124,10 @@ func (gm GameManager) GetClientView() ClientView {
 	}
 
 	return ClientView{
-		Board:             gm.state.board,
+		Board:             gm.state.lastSnapshot().board,
 		Status:            gm.state.status.String(),
-		LastMove:          gm.state.lastMove,
-		WhoseTurn:         gm.state.whoseTurn.String(),
+		LastMove:          gm.state.lastSnapshot().lastMove,
+		WhoseTurn:         gm.state.lastSnapshot().whoseTurn.String(),
 		WinThreshold:      gm.state.winThreshold,
 		ColorToPlayer:     colorToPlayer,
 		IDToPlayer:        idToPlayer,

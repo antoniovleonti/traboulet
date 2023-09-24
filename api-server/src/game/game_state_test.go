@@ -6,6 +6,15 @@ import (
 	// "fmt"
 )
 
+func makeSingleSnapshotHistory(board BoardT, agent AgentColor) []snapshot {
+  return []snapshot{
+    snapshot{
+      board: board,
+      whoseTurn: agent,
+    },
+  }
+}
+
 func TestCreateDefaultGameState(t *testing.T) {
 	gsWClock, err := newGameState(
 		Config{TimeControl: 60 * time.Second}, nil, nil, 30*time.Second)
@@ -57,17 +66,18 @@ func TestValidateMove(t *testing.T) {
 	var B, W, R, x Marble = marbleBlack, marbleWhite, marbleRed, marbleNil
 
 	gs := gameState{
-		board: [][]Marble{
-			{W, W, W, W, W, W, W},
-			{W, W, x, W, W, W, W},
-			{W, W, W, W, W, W, B},
-			{W, W, W, W, W, W, R},
-			{W, B, W, W, W, W, W},
-			{B, B, W, W, W, W, x},
-			{W, x, x, x, x, B, B},
-		},
+		history: makeSingleSnapshotHistory(
+      [][]Marble{
+        {W, W, W, W, W, W, W},
+        {W, W, x, W, W, W, W},
+        {W, W, W, W, W, W, B},
+        {W, W, W, W, W, W, R},
+        {W, B, W, W, W, W, W},
+        {B, B, W, W, W, W, x},
+        {W, x, x, x, x, B, B},
+      },
+      agentWhite),
 		winThreshold: 7,
-		whoseTurn:    agentWhite,
 		posToCount:   make(map[string]int),
 	}
 
@@ -90,14 +100,22 @@ func TestValidateMove(t *testing.T) {
 	}
 
 	for idx, valid := range validCases {
-		if !gs.ValidateMove(valid) {
-			t.Errorf("validCases[%d] was considered invalid", idx)
+    mwmm, err := gs.ValidateMove(valid)
+		if err != nil {
+			t.Errorf("validCases[%d] was considered invalid: %s", idx, err.Error())
 		}
+    if mwmm == nil {
+      t.Errorf("mwmm was nil")
+    }
 	}
 	for idx, invalid := range invalidCases {
-		if gs.ValidateMove(invalid) {
+    mwmm, err := gs.ValidateMove(invalid)
+		if err == nil {
 			t.Errorf("invalidCases[%d] was considered valid", idx)
 		}
+    if mwmm != nil {
+      t.Errorf("mwmm was not nil")
+    }
 	}
 }
 
@@ -106,21 +124,25 @@ func TestCantPushOffEdge(t *testing.T) {
 	var B, W, R, x Marble = marbleBlack, marbleWhite, marbleRed, marbleNil
 
 	gs := gameState{
-		board: [][]Marble{
-			{x, W, x, B, x, x, x},
-			{x, x, R, x, W, x, B},
-			{x, W, x, x, B, R, R},
-			{R, x, x, x, x, x, x},
-			{x, x, R, x, R, x, x},
-			{W, x, x, x, R, x, x},
-			{B, B, x, x, x, W, W},
-		},
+    history: []snapshot{
+      snapshot{
+        board: [][]Marble{
+          {x, W, x, B, x, x, x},
+          {x, x, R, x, W, x, B},
+          {x, W, x, x, B, R, R},
+          {R, x, x, x, x, x, x},
+          {x, x, R, x, R, x, x},
+          {W, x, x, x, R, x, x},
+          {B, B, x, x, x, W, W},
+        },
+        whoseTurn: agentBlack,
+      },
+    },
 		winThreshold: 7,
-		whoseTurn:    agentBlack,
 		posToCount:   make(map[string]int),
 	}
 
-	if gs.ValidateMove(Move{X: 1, Y: 6, D: DirLeft}) {
+	if _, err := gs.ValidateMove(Move{X: 1, Y: 6, D: DirLeft}); err == nil {
 		t.Error("Could push own marble off")
 	}
 }
@@ -168,7 +190,7 @@ func TestExecuteMove(t *testing.T) {
 	playTestCases := func(moves []moveTest) {
 		// For diffing scores between test cases
 		prevScores := make(map[AgentColor]int)
-		prevPlayer := gs.whoseTurn
+		prevPlayer := gs.lastSnapshot().whoseTurn
 
 		for idx, testCase := range moves {
 			time.Sleep(testCase.sleep)
@@ -178,10 +200,10 @@ func TestExecuteMove(t *testing.T) {
 			}
 
 			if testCase.valid {
-				if gs.lastMove == nil ||
-					gs.lastMove.X != testCase.move.X ||
-					gs.lastMove.Y != testCase.move.Y ||
-					gs.lastMove.D != testCase.move.D {
+				if gs.lastSnapshot().lastMove == nil ||
+					gs.lastSnapshot().lastMove.X != testCase.move.X ||
+					gs.lastSnapshot().lastMove.Y != testCase.move.Y ||
+					gs.lastSnapshot().lastMove.D != testCase.move.D {
 					t.Error("last move did not match expectation")
 				}
 			}
@@ -193,7 +215,7 @@ func TestExecuteMove(t *testing.T) {
 				t.Errorf("moves[%d]: expected no score, but score changed", idx)
 			}
 
-			prevPlayer = gs.whoseTurn
+			prevPlayer = gs.lastSnapshot().whoseTurn
 			for k, v := range gs.agents {
 				prevScores[k] = v.score
 			}
@@ -217,43 +239,47 @@ func TestUpdateStatus(t *testing.T) {
 	testCases := []TestCase{
 		{ // No valid moves for white
 			gs: gameState{
-				board:        [][]Marble{{W, W}, {W, W}},
+        history: []snapshot{
+          snapshot{
+            board:        [][]Marble{{W, W}, {W, W}},
+            whoseTurn:    agentWhite,
+          },
+        },
 				winThreshold: 7,
-				whoseTurn:    agentWhite,
 			},
 			status: statusBlackWon,
 		},
 		{ // No valid moves for black (lost all marbles)
 			gs: gameState{
-				board:        [][]Marble{{W, x}, {x, x}},
+				history: makeSingleSnapshotHistory(
+          [][]Marble{{W, x}, {x, x}}, agentBlack),
 				winThreshold: 7,
-				whoseTurn:    agentBlack,
 			},
 			status: statusWhiteWon,
 		},
 		{ // Win by score (white)
 			gs: gameState{
-				board:        [][]Marble{{W, x}, {x, B}},
+				history: makeSingleSnapshotHistory(
+          [][]Marble{{W, x}, {x, B}}, agentBlack),
 				winThreshold: 7,
-				whoseTurn:    agentBlack,
 			},
 			overrideWhiteScore: 7,
 			status:             statusWhiteWon,
 		},
 		{ // Win by score (white)
 			gs: gameState{
-				board:        [][]Marble{{W, x}, {x, B}},
+				history: makeSingleSnapshotHistory(
+          [][]Marble{{W, x}, {x, B}}, agentWhite),
 				winThreshold: 7,
-				whoseTurn:    agentWhite,
 			},
 			overrideBlackScore: 7,
 			status:             statusBlackWon,
 		},
 		{ // No win
 			gs: gameState{
-				board:        [][]Marble{{W, x}, {x, B}},
+				history: makeSingleSnapshotHistory(
+          [][]Marble{{W, x}, {x, B}}, agentWhite),
 				winThreshold: 7,
-				whoseTurn:    agentWhite,
 			},
 			status: statusOngoing,
 		},
@@ -267,13 +293,14 @@ func TestUpdateStatus(t *testing.T) {
 		test.gs.agents[agentBlack] = &agent{
 			score: test.overrideBlackScore,
 		}
-		if actual := test.gs.updateStatus(); actual != test.status {
+    test.gs.updateStatus()
+		if actual := test.gs.status; actual != test.status {
 			t.Errorf("testCases[%d]: status %d != %d", idx, actual, test.status)
 		}
-		if test.status != statusOngoing && test.gs.whoseTurn != agentNil {
+		if test.status != statusOngoing && test.gs.lastSnapshot().whoseTurn != agentNil {
 			t.Errorf(
 				"testCases[%d]: game not ongoing; expected whoseTurn to be agentNil, "+
-					"got %s", idx, test.gs.whoseTurn.String())
+					"got %s", idx, test.gs.lastSnapshot().whoseTurn.String())
 		}
 	}
 }
@@ -316,13 +343,9 @@ func TestDrawByRepetition(t *testing.T) {
 	// This is a draw -- neither player has a way to force a win. In fact, if
 	// either player breaks the repetition (a3r b2l b3l a2r...), they will lose.
 	gs := gameState{
-		board: [][]Marble{
-			{R, x, x},
-			{x, B, x},
-			{W, x, x},
-		},
+		history: makeSingleSnapshotHistory(
+      [][]Marble{ {R, x, x}, {x, B, x}, {W, x, x}, }, agentWhite),
 		winThreshold: 1,
-		whoseTurn:    agentWhite,
 		posToCount:   make(map[string]int),
 	}
 

@@ -16,17 +16,12 @@ const (
 )
 
 func DirectionFromString(s string) (Direction, error) {
-	if s == DirUp.String() {
-		return DirUp, nil
-	} else if s == DirDown.String() {
-		return DirDown, nil
-	} else if s == DirRight.String() {
-		return DirRight, nil
-	} else if s == DirLeft.String() {
-		return DirLeft, nil
-	} else {
-		return DirNil, errors.New("invalid direction!")
-	}
+  for _, d := range []Direction{DirUp, DirDown, DirRight, DirLeft} {
+    if s == d.String() {
+      return d, nil
+    }
+  }
+  return DirNil, errors.New("invalid direction!")
 }
 
 func (d *Direction) UnmarshalJSON(raw []byte) error {
@@ -120,14 +115,14 @@ func (m Move) dy() int {
 	return m.D.dy()
 }
 
-type LastMoveT struct {
+type MoveWMarblesMoved struct {
 	X            int       `json:"x"`
 	Y            int       `json:"y"`
-	D            Direction `json:"d"`
+	D            Direction `json:"d,string"`
 	MarblesMoved int       `json:"marblesMoved"`
 }
 
-func (m LastMoveT) MarshalJSON() ([]byte, error) {
+func (m MoveWMarblesMoved) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		X            int    `json:"x"`
 		Y            int    `json:"y"`

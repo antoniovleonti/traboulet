@@ -66,9 +66,14 @@ func TestGetState(t *testing.T) {
 	// directly and pass in our Request and ResponseRecorder.
 	gh.ServeHTTP(rr, req)
 	// Check the response body is what we expect.
+  if rr.Code != http.StatusOK {
+    t.Errorf("expected code %d, got %d", http.StatusOK, rr.Code)
+  }
+
 	var actual game.ClientView
 	decoder := json.NewDecoder(rr.Body)
 	err = decoder.Decode(&actual)
+
 	if err != nil {
 		t.Fatal(err)
 	}
