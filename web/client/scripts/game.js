@@ -1,9 +1,9 @@
 "use strict";
 
-let boardDisplay =
+const boardDisplay =
     new BoardDisplay(document.getElementById("marble-container"));
-let statusDisplay = new StatusDisplay(document.getElementById("status"));
-let topPlayer = {
+const statusDisplay = new StatusDisplay(document.getElementById("status"));
+const topPlayer = {
   clock: document.getElementById("other-player-clock"),
   firstMoveIndicator:
       document.getElementById("other-player-first-move-indicator"),
@@ -12,7 +12,7 @@ let topPlayer = {
   score: document.getElementById("other-player-score"),
   you: null,
 };
-let bottomPlayer = {
+const bottomPlayer = {
   clock: document.getElementById("your-clock"),
   firstMoveIndicator:
       document.getElementById("your-first-move-indicator"),
@@ -21,7 +21,9 @@ let bottomPlayer = {
   score: document.getElementById("your-score"),
   you: document.getElementById("you-indicator"),
 };
-let playerDisplayManager = new PlayerDisplayManager(topPlayer, bottomPlayer);
+const playerDisplayManager = new PlayerDisplayManager(topPlayer, bottomPlayer);
+const moveHistoryDisplay =
+    new MoveHistoryDisplay(document.getElementById('move-history'));
 
 function getURLBase() {
   let urlParts = window.location.href.split("/");
@@ -71,6 +73,8 @@ function update(state) {
   const isYourTurn = ((myID != null) &&
                       (state.idToPlayer[myID].color == lastSnapshot.whoseTurn));
   boardDisplay.update(lastSnapshot.board, state.validMoves, isYourTurn);
+
+  moveHistoryDisplay.update(state.history);
 }
 
 getStateAndUpdate();

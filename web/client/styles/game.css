@@ -8,7 +8,7 @@
   --player-card-margin: 0.5em;
   margin-top: var(--player-card-margin);
   margin-bottom: var(--player-card-margin);
-  width: 200px;
+  width: 100%;
 }
 
 .player-clock {
@@ -151,6 +151,19 @@
 
 .marble-ghost {
   opacity: 0.5;
+}
+
+#move-history li {
+  display: inline;
+}
+#move-history li + li:before {
+  content: ", ";
+}
+
+#resign-button {
+  --resign-button-margin: 0.5em;
+  margin-top: var(--resign-button-margin);
+  margin-bottom: var(--resign-button-margin);
 }
 
 @media (min-width: 900px) {

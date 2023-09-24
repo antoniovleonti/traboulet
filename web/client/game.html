@@ -23,13 +23,13 @@ Game doesn't exist or the server is down.
 </div>
 
 <div>
-<h2>Info</h2>
-Status:
-<span id=status>*****</span>
 
 <div id=game-dash>
 
 <div>
+<h2>Info</h2>
+<span id=status>NOT FOUND</span><br>
+<ol id=move-history></ol>
 </div>
 
 <div id=board-section>
@@ -113,17 +113,17 @@ Status:
   <h2>Players</h2>
   <div class="player-card">
     <span id=other-player-color>*****</span><br>
-    Score: <span id=other-player-score>*</span><br>
+    Score: <span id=other-player-score>-</span><br>
     Time:
-    <span id=other-player-clock class="player-clock">**:**</span>
+    <span id=other-player-clock class="player-clock">00:00</span>
     <span id=other-player-activity hidden>***</span><br>
   </div>
 
   <div class="player-card">
     <span id=your-color>*****</span>
     <span id=you-indicator hidden>(you)</span><br>
-    Score: <span id=your-score>*</span><br>
-    Time: <span id=your-clock class="player-clock">**:**</span>
+    Score: <span id=your-score>-</span><br>
+    Time: <span id=your-clock class="player-clock">00:00</span>
     <span id=your-activity hidden>***</span>
   </div>
   <button id=resign-button>Resign</button>
@@ -140,6 +140,7 @@ Status:
 <script src='/scripts/player_display_manager.js'></script>
 <script src='/scripts/board_display.js'></script>
 <script src='/scripts/status_display.js'></script>
+<script src='/scripts/move_history_display.js'></script>
 <script src='/scripts/game.js'></script>
 
 </html>
