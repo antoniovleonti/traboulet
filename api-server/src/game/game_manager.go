@@ -21,10 +21,8 @@ type clientViewPlayer struct {
 }
 
 type ClientView struct {
-	Board             BoardT                      `json:"board"`
+	History           []snapshot                  `json:"history"`
 	Status            string                      `json:"status"`
-	LastMove          *MoveWMarblesMoved          `json:"lastMove"`
-	WhoseTurn         string                      `json:"whoseTurn"`
 	WinThreshold      int                         `json:"winThreshold"`
 	ColorToPlayer     map[string]clientViewPlayer `json:"colorToPlayer"`
 	IDToPlayer        map[string]clientViewPlayer `json:"idToPlayer"`
@@ -124,10 +122,8 @@ func (gm GameManager) GetClientView() ClientView {
 	}
 
 	return ClientView{
-		Board:             gm.state.lastSnapshot().board,
+		History:           gm.state.history,
 		Status:            gm.state.status.String(),
-		LastMove:          gm.state.lastSnapshot().lastMove,
-		WhoseTurn:         gm.state.lastSnapshot().whoseTurn.String(),
 		WinThreshold:      gm.state.winThreshold,
 		ColorToPlayer:     colorToPlayer,
 		IDToPlayer:        idToPlayer,

@@ -3,7 +3,8 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-  "errors"
+	"errors"
+	"fmt"
 	"game"
 	"github.com/r3labs/sse/v2"
 	"log"
@@ -11,7 +12,6 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-	"fmt"
 )
 
 func fakeWhiteCookie() *http.Cookie {
@@ -67,11 +67,12 @@ func TestGetState(t *testing.T) {
 	// directly and pass in our Request and ResponseRecorder.
 	gh.ServeHTTP(rr, req)
 	// Check the response body is what we expect.
-  if rr.Code != http.StatusOK {
-    t.Errorf("expected code %d, got %d", http.StatusOK, rr.Code)
-  }
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected code %d, got %d", http.StatusOK, rr.Code)
+	}
 
 	var actual game.ClientView
+	log.Print(rr.Body.String())
 	decoder := json.NewDecoder(rr.Body)
 	err = decoder.Decode(&actual)
 
@@ -226,11 +227,11 @@ func TestDeleteChallenge(t *testing.T) {
 }
 
 func handleReqCheckEventStream(
-  gh *gameHandler, req *http.Request, expectedStatus int) error {
-  // set up a server (sse client requires this)
+	gh *gameHandler, req *http.Request, expectedStatus int) error {
+	// set up a server (sse client requires this)
 	server := httptest.NewServer(gh)
 	url := server.URL
-  // Prepare event listener
+	// Prepare event listener
 	msgsReceived := 0
 	done := make(chan struct{})
 	handleUpdate := func(msg *sse.Event) {
@@ -253,7 +254,7 @@ func handleReqCheckEventStream(
 	// Check the response body is what we expect.
 	if resp.Code != expectedStatus {
 		return fmt.Errorf(
-      "handler returned unexpected status:\ngot: %d\nexpected: %d\nbody: %s",
+			"handler returned unexpected status:\ngot: %d\nexpected: %d\nbody: %s",
 			resp.Code, expectedStatus, resp.Body.String())
 	}
 
@@ -265,7 +266,7 @@ func handleReqCheckEventStream(
 			return errors.New("expected subscriber to receive exactly one message")
 		}
 	}
-  return nil
+	return nil
 }
 
 func TestPostResignation(t *testing.T) {
@@ -273,13 +274,13 @@ func TestPostResignation(t *testing.T) {
 		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 
-  req, err := http.NewRequest("POST", "/resignation", nil)
-  req.AddCookie(fakeWhiteCookie())
+	req, err := http.NewRequest("POST", "/resignation", nil)
+	req.AddCookie(fakeWhiteCookie())
 
-  err = handleReqCheckEventStream(gh, req, http.StatusOK)
-  if err != nil {
-    t.Error(err)
-  }
+	err = handleReqCheckEventStream(gh, req, http.StatusOK)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestPostResignationNoCookie(t *testing.T) {
@@ -287,12 +288,12 @@ func TestPostResignationNoCookie(t *testing.T) {
 		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 
-  req, err := http.NewRequest("POST", "/resignation", nil)
+	req, err := http.NewRequest("POST", "/resignation", nil)
 
-  err = handleReqCheckEventStream(gh, req, http.StatusUnauthorized)
-  if err != nil {
-    t.Error(err)
-  }
+	err = handleReqCheckEventStream(gh, req, http.StatusUnauthorized)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestPostResignationTwice(t *testing.T) {
@@ -300,17 +301,17 @@ func TestPostResignationTwice(t *testing.T) {
 		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 
-  req, err := http.NewRequest("POST", "/resignation", nil)
-  req.AddCookie(fakeWhiteCookie())
+	req, err := http.NewRequest("POST", "/resignation", nil)
+	req.AddCookie(fakeWhiteCookie())
 
-  err = handleReqCheckEventStream(gh, req, http.StatusOK)
-  if err != nil {
-    t.Error(err)
-  }
+	err = handleReqCheckEventStream(gh, req, http.StatusOK)
+	if err != nil {
+		t.Error(err)
+	}
 
-  // Will fail the second time because the game's already ended.
-  err = handleReqCheckEventStream(gh, req, http.StatusBadRequest)
-  if err != nil {
-    t.Error(err)
-  }
+	// Will fail the second time because the game's already ended.
+	err = handleReqCheckEventStream(gh, req, http.StatusBadRequest)
+	if err != nil {
+		t.Error(err)
+	}
 }

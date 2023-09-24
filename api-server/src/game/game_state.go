@@ -1,10 +1,11 @@
 package game
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
-  "errors"
 )
 
 type Status int
@@ -34,13 +35,25 @@ func (s Status) String() string {
 }
 
 type snapshot struct {
-	board             BoardT
-	lastMove          *MoveWMarblesMoved
-	whoseTurn         AgentColor
+	board     BoardT             `json:"board"`
+	lastMove  *MoveWMarblesMoved `json:"lastMove"`
+	whoseTurn AgentColor         `json:"whoseTurn,string"`
+}
+
+func (s snapshot) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Board     BoardT             `json:"board"`
+		LastMove  *MoveWMarblesMoved `json:"lastMove"`
+		WhoseTurn string             `json:"whoseTurn"`
+	}{
+		Board:     s.board,
+		LastMove:  s.lastMove,
+		WhoseTurn: s.whoseTurn.String(),
+	})
 }
 
 type gameState struct {
-  history []snapshot
+	history           []snapshot
 	agents            map[AgentColor]*agent
 	ko                *Move
 	winThreshold      int
@@ -63,20 +76,20 @@ func newGameState(
 	}
 	var x, R, B, W Marble = marbleNil, marbleRed, marbleBlack, marbleWhite
 	startPosition := []snapshot{
-    snapshot{
-      board: [][]Marble{
-        {W, W, x, x, x, B, B},
-        {W, W, x, R, x, B, B},
-        {x, x, R, R, R, x, x},
-        {x, R, R, R, R, R, x},
-        {x, x, R, R, R, x, x},
-        {B, B, x, R, x, W, W},
-        {B, B, x, x, x, W, W},
-      },
-      whoseTurn: agentWhite,
-      lastMove: nil,
-    },
-  }
+		snapshot{
+			board: [][]Marble{
+				{W, W, x, x, x, B, B},
+				{W, W, x, R, x, B, B},
+				{x, x, R, R, R, x, x},
+				{x, R, R, R, R, R, x},
+				{x, x, R, R, R, x, x},
+				{B, B, x, R, x, W, W},
+				{B, B, x, x, x, W, W},
+			},
+			whoseTurn: agentWhite,
+			lastMove:  nil,
+		},
+	}
 
 	agents := make(map[AgentColor]*agent)
 	agents[agentWhite] = &agent{
@@ -91,7 +104,7 @@ func newGameState(
 	firstMoveDeadline := time.Now().Add(firstMoveTimeout)
 
 	gs := gameState{
-		history:      startPosition,
+		history:           startPosition,
 		agents:            agents,
 		winThreshold:      7,
 		timeControl:       config.TimeControl,
@@ -109,16 +122,16 @@ func newGameState(
 }
 
 func (gs gameState) boardsize() int {
-  return len(gs.history[0].board)
+	return len(gs.history[0].board)
 }
 
 func (gs *gameState) lastSnapshot() *snapshot {
-  return &gs.history[len(gs.history)-1]
+	return &gs.history[len(gs.history)-1]
 }
 
 func (gs gameState) getPositionString() string {
 	return fmt.Sprintf(
-    "%v;%d", gs.lastSnapshot().board, gs.lastSnapshot().whoseTurn)
+		"%v;%d", gs.lastSnapshot().board, gs.lastSnapshot().whoseTurn)
 }
 
 func (gs *gameState) isInBounds(x, y int) bool {
@@ -144,7 +157,7 @@ func (gs *gameState) ValidateMove(move Move) (*MoveWMarblesMoved, error) {
 
 	// Check that move is in turn
 	if gs.lastSnapshot().board[move.Y][move.X] !=
-    gs.lastSnapshot().whoseTurn.marble() {
+		gs.lastSnapshot().whoseTurn.marble() {
 		return nil, errors.New("Is not an in-turn marble.")
 	}
 
@@ -162,14 +175,14 @@ func (gs *gameState) ValidateMove(move Move) (*MoveWMarblesMoved, error) {
 
 	// Check that you are not pushing your own piece off the board
 	foundEmpty := false
-  marblesMoved := 1
+	marblesMoved := 1
 	var x, y int = move.X, move.Y
 	for ; gs.isInBounds(x, y); x, y = x+move.dx(), y+move.dy() {
 		if gs.lastSnapshot().board[y][x] == marbleNil {
 			foundEmpty = true
 			break
 		}
-    marblesMoved++
+		marblesMoved++
 	}
 	if !foundEmpty {
 		// Move back one step to the last valid position
@@ -180,20 +193,20 @@ func (gs *gameState) ValidateMove(move Move) (*MoveWMarblesMoved, error) {
 		}
 	}
 
-  moveWMarblesMoved := MoveWMarblesMoved{
-    X: move.X,
-    Y: move.Y,
-    D: move.D,
-    MarblesMoved: marblesMoved,
-  }
+	moveWMarblesMoved := MoveWMarblesMoved{
+		X:            move.X,
+		Y:            move.Y,
+		D:            move.D,
+		MarblesMoved: marblesMoved,
+	}
 	return &moveWMarblesMoved, nil
 }
 
 func (gs *gameState) updateStatus() {
-  newStatus := statusOngoing
+	newStatus := statusOngoing
 	// If the game is over, it's no one's turn.
 	defer func() {
-    gs.status = newStatus
+		gs.status = newStatus
 		if newStatus != statusOngoing {
 			gs.lastSnapshot().whoseTurn = agentNil
 		}
@@ -230,7 +243,7 @@ func (gs *gameState) ExecuteMove(move Move) error {
 		return err
 	}
 
-  board := gs.lastSnapshot().board
+	board := gs.lastSnapshot().board
 
 	marblesMoved := 0
 	tmp := marbleNil
@@ -272,22 +285,22 @@ func (gs *gameState) ExecuteMove(move Move) error {
 		panic("End player turn failed!")
 	}
 
-  gs.history = append(gs.history, snapshot{
-    board: board,
-    whoseTurn: gs.lastSnapshot().whoseTurn.otherAgent(),
-    lastMove: &MoveWMarblesMoved{
-      X:            move.X,
-      Y:            move.Y,
-      D:            move.D,
-      MarblesMoved: marblesMoved,
-    },
+	gs.history = append(gs.history, snapshot{
+		board:     board,
+		whoseTurn: gs.lastSnapshot().whoseTurn.otherAgent(),
+		lastMove: &MoveWMarblesMoved{
+			X:            move.X,
+			Y:            move.Y,
+			D:            move.D,
+			MarblesMoved: marblesMoved,
+		},
 	})
 
 	gs.posToCount[gs.getPositionString()]++
 
 	gs.updateStatus()
 	if gs.status == statusOngoing {
-    agent := gs.agents[gs.lastSnapshot().whoseTurn]
+		agent := gs.agents[gs.lastSnapshot().whoseTurn]
 		if !agent.startTurn(gs.playerTimeoutCallback) {
 			panic("startTurn failed!")
 		}

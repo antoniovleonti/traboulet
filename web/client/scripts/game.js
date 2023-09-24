@@ -55,19 +55,22 @@ function update(state) {
   if (state == null) {
     return
   }
+
   console.log("state: ", state);
   document.getElementById("error").hidden = true
   document.getElementById("game-dash").hidden = false
+
+  const lastSnapshot = state.history[state.history.length-1];
   statusDisplay.update(state.status);
   playerDisplayManager.update(
       state.idToPlayer, state.colorToPlayer,
-      state.status == "ONGOING" ? state.whoseTurn : null, state.timeControl,
-      state.firstMoveDeadline);
+      state.status == "ONGOING" ? lastSnapshot.whoseTurn : null,
+      state.timeControl, state.firstMoveDeadline);
 
   const myID = PlayerDisplayManager.getMyID(Object.keys(state.idToPlayer));
   const isYourTurn = ((myID != null) &&
-                      (state.idToPlayer[myID].color == state.whoseTurn));
-  boardDisplay.update(state.board, state.validMoves, isYourTurn);
+                      (state.idToPlayer[myID].color == lastSnapshot.whoseTurn));
+  boardDisplay.update(lastSnapshot.board, state.validMoves, isYourTurn);
 }
 
 getStateAndUpdate();

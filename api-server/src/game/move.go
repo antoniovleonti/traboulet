@@ -16,12 +16,12 @@ const (
 )
 
 func DirectionFromString(s string) (Direction, error) {
-  for _, d := range []Direction{DirUp, DirDown, DirRight, DirLeft} {
-    if s == d.String() {
-      return d, nil
-    }
-  }
-  return DirNil, errors.New("invalid direction!")
+	for _, d := range []Direction{DirUp, DirDown, DirRight, DirLeft} {
+		if s == d.String() {
+			return d, nil
+		}
+	}
+	return DirNil, errors.New("invalid direction!")
 }
 
 func (d *Direction) UnmarshalJSON(raw []byte) error {
