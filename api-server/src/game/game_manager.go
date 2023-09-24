@@ -92,8 +92,8 @@ func (gm *GameManager) TryMove(m Move, c *http.Cookie) error {
 	if user.color != gm.state.lastSnapshot().whoseTurn {
 		return errors.New("It is not your turn.")
 	}
-	if !gm.state.ExecuteMove(m) {
-		return errors.New("Move was invalid.")
+	if err := gm.state.ExecuteMove(m); err != nil {
+		return err
 	}
 	return nil
 }

@@ -222,12 +222,12 @@ func (gs *gameState) updateStatus() {
 	}
 }
 
-func (gs *gameState) ExecuteMove(move Move) bool {
+func (gs *gameState) ExecuteMove(move Move) error {
 	gs.mutex.Lock()
 	defer gs.mutex.Unlock()
 
 	if _, err := gs.ValidateMove(move); err != nil {
-		return false
+		return err
 	}
 
   board := gs.lastSnapshot().board
@@ -298,7 +298,7 @@ func (gs *gameState) ExecuteMove(move Move) bool {
 		}
 	}
 
-	return true
+	return nil
 }
 
 func (gs *gameState) playerTimeoutCallback() {

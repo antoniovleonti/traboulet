@@ -194,9 +194,13 @@ func TestExecuteMove(t *testing.T) {
 
 		for idx, testCase := range moves {
 			time.Sleep(testCase.sleep)
-			if ok := gs.ExecuteMove(testCase.move); ok != testCase.valid {
-				t.Errorf("moves[%d]: expected valid == %t, got %t",
-					idx, testCase.valid, ok)
+			if err := gs.ExecuteMove(testCase.move); (err == nil) != testCase.valid {
+        validityStr := "invalid"
+        if testCase.valid {
+          validityStr = "valid"
+        }
+				t.Errorf("moves[%d]: expected %s, got err %s",
+					idx, validityStr, err.Error())
 			}
 
 			if testCase.valid {
@@ -362,8 +366,8 @@ func TestDrawByRepetition(t *testing.T) {
 	}
 
 	for idx, move := range repeat {
-		if !gs.ExecuteMove(move) {
-			t.Errorf("move[%d] was considered invalid", idx)
+		if err := gs.ExecuteMove(move); err != nil {
+			t.Errorf("move[%d] was considered invalid. err: %s", idx, err.Error())
 		}
 	}
 
