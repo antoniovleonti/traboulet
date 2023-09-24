@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+  "errors"
 	"game"
 	"github.com/r3labs/sse/v2"
 	"log"
@@ -10,7 +11,7 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-	// "fmt"
+	"fmt"
 )
 
 func fakeWhiteCookie() *http.Cookie {
@@ -81,9 +82,6 @@ func TestGetState(t *testing.T) {
 
 func postMove(t *testing.T, gh *gameHandler, body []byte,
 	cookies []*http.Cookie, expectedStatus int) {
-	server := httptest.NewServer(gh)
-	url := server.URL
-
 	// Build request
 	postMoveReq, err := http.NewRequest("POST", "/move", bytes.NewReader(body))
 	if err != nil {
@@ -93,43 +91,7 @@ func postMove(t *testing.T, gh *gameHandler, body []byte,
 		postMoveReq.AddCookie(c)
 	}
 
-	msgsReceived := 0
-	done := make(chan struct{})
-	handleUpdate := func(msg *sse.Event) {
-		msgsReceived++
-		log.Print(string(msg.Data))
-		log.Print("sending done signal")
-		done <- struct{}{}
-	}
-	updateClient := sse.NewClient(url + "/event-stream")
-	go func() {
-		err = updateClient.SubscribeRaw(handleUpdate)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
-	// Wait for the subscriber to get registered
-	time.Sleep(2 * time.Millisecond)
-	// Run the request through our handler
-	postMoveResp := httptest.NewRecorder()
-	gh.ServeHTTP(postMoveResp, postMoveReq)
-	time.Sleep(time.Millisecond)
-
-	// Check the response body is what we expect.
-	if postMoveResp.Code != expectedStatus {
-		t.Errorf("handler returned unexpected status:\ngot: %d\nexpected: %d\n",
-			postMoveResp.Code, expectedStatus)
-		t.Errorf("returned body: %s\n", postMoveResp.Body.String())
-	}
-
-	// Check we recieved a game update
-	if expectedStatus == http.StatusOK {
-		log.Print("awaiting done signal")
-		<-done
-		if msgsReceived != 1 {
-			t.Error("expected subscriber to receive exactly one message")
-		}
-	}
+	handleReqCheckEventStream(gh, postMoveReq, expectedStatus)
 }
 
 func TestPostValidMove(t *testing.T) {
@@ -261,4 +223,94 @@ func TestDeleteChallenge(t *testing.T) {
 	if !cbCalled {
 		t.Error("callback not called")
 	}
+}
+
+func handleReqCheckEventStream(
+  gh *gameHandler, req *http.Request, expectedStatus int) error {
+  // set up a server (sse client requires this)
+	server := httptest.NewServer(gh)
+	url := server.URL
+  // Prepare event listener
+	msgsReceived := 0
+	done := make(chan struct{})
+	handleUpdate := func(msg *sse.Event) {
+		msgsReceived++
+		log.Print(string(msg.Data))
+		log.Print("sending done signal")
+		done <- struct{}{}
+	}
+	updateClient := sse.NewClient(url + "/event-stream")
+	go func() {
+		updateClient.SubscribeRaw(handleUpdate)
+	}()
+	// Wait for the subscriber to get registered
+	time.Sleep(5 * time.Millisecond)
+	// Run the request through our handler
+	resp := httptest.NewRecorder()
+	gh.ServeHTTP(resp, req)
+	time.Sleep(time.Millisecond)
+
+	// Check the response body is what we expect.
+	if resp.Code != expectedStatus {
+		return fmt.Errorf(
+      "handler returned unexpected status:\ngot: %d\nexpected: %d\nbody: %s",
+			resp.Code, expectedStatus, resp.Body.String())
+	}
+
+	// Check we recieved a game update
+	if expectedStatus == http.StatusOK {
+		log.Print("awaiting done signal")
+		<-done
+		if msgsReceived != 1 {
+			return errors.New("expected subscriber to receive exactly one message")
+		}
+	}
+  return nil
+}
+
+func TestPostResignation(t *testing.T) {
+	gh, _ := newGameHandler(
+		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+
+  req, err := http.NewRequest("POST", "/resignation", nil)
+  req.AddCookie(fakeWhiteCookie())
+
+  err = handleReqCheckEventStream(gh, req, http.StatusOK)
+  if err != nil {
+    t.Error(err)
+  }
+}
+
+func TestPostResignationNoCookie(t *testing.T) {
+	gh, _ := newGameHandler(
+		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+
+  req, err := http.NewRequest("POST", "/resignation", nil)
+
+  err = handleReqCheckEventStream(gh, req, http.StatusUnauthorized)
+  if err != nil {
+    t.Error(err)
+  }
+}
+
+func TestPostResignationTwice(t *testing.T) {
+	gh, _ := newGameHandler(
+		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+
+  req, err := http.NewRequest("POST", "/resignation", nil)
+  req.AddCookie(fakeWhiteCookie())
+
+  err = handleReqCheckEventStream(gh, req, http.StatusOK)
+  if err != nil {
+    t.Error(err)
+  }
+
+  // Will fail the second time because the game's already ended.
+  err = handleReqCheckEventStream(gh, req, http.StatusBadRequest)
+  if err != nil {
+    t.Error(err)
+  }
 }
