@@ -156,7 +156,7 @@
 #move-history li {
   display: inline;
 }
-#move-history li + li:before {
+#move-history li::after {
   content: ", ";
 }
 
@@ -167,14 +167,15 @@
 }
 
 @media (min-width: 900px) {
+
 #game-dash {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
 }
 
-@media (min-width: 1000px) {
-#game-dash {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+#move-history li:nth-child(even)::after {
+  content: "\a";
+  white-space: pre;
 }
+
 }
