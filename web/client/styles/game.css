@@ -37,9 +37,9 @@
   justify-content: center;
   align-items: center;
   width: min(100%, 500px);
-  background-color: silver;
   border-radius: 10%;
   position: relative;
+  border: 1px solid;
 }
 /* this is to make the board a responsive square
    https://spin.atomicobject.com/2015/07/14/css-responsive-square/ */
@@ -56,7 +56,6 @@
 }
 
 #board-inner {
-  border: 1px solid black;
   border-radius: 2%;
   display: grid;
   grid-template-columns: 1fr;
@@ -88,25 +87,8 @@
   padding: calc(100% / 8 / 2);
 }
 
-.marble-base {
-  border-radius: 50%;
-  width: calc(100% / 7);
-  height: calc(100% / 7);
-}
-
-.bg-raised {
-  --bg-raised-margin: calc(100% / 8 / 4 );
-  --bg-raised-size: calc(100% / 8 - var(--bg-raised-margin) * 2);
-
-  border-radius: 30%;
-  border: 1px solid black;
-  margin: var(--bg-raised-margin);
-  width: var(--bg-raised-size);
-  height: var(--bg-raised-size);
-}
-
 .bg-hole {
-  --margin-bg-hole: calc(100% / 7 * 0.15);
+  --margin-bg-hole: calc(100% / 7 * 0.35);
   --bg-hole-size: calc(100% / 7 - var(--margin-bg-hole) * 2);
 
   border-radius: 50%;
@@ -117,35 +99,51 @@
   height: var(--bg-hole-size);
 }
 
+.bg-line-vertical {
+  --margin-bg-line-vertical: calc((100% / 7 - 1px)/ 2);
+  width: 1px;
+  height: calc(100% - var(--margin-bg-line-vertical) * 2);
+  background-color: black;
+  margin: var(--margin-bg-line-vertical);
+}
+.bg-line-horizontal {
+  --margin-bg-line-horizontal: calc((100% / 7 - 1px)/ 2);
+  height: 1px;
+  width: calc(100% - var(--margin-bg-line-horizontal) * 2);
+  background-color: black;
+  margin: var(--margin-bg-line-horizontal);
+}
+
+.marble-base {
+  border-radius: 50%;
+  width: calc(100% / 7);
+  height: calc(100% / 7);
+  border: 1px solid;
+  box-shadow: 3px 3px;
+}
+
 .marble-white {
-  background-color: seashell;
+  background-color: #EDEADE;
 }
 .marble-black {
-  background-color: #33302e;
+  background-color: #36454F;
 }
 .marble-red {
   background-color: red;
 }
 .marble-null {
+  border: none;
+  box-shadow: none;
 }
 
-.marble-selectable.marble-black:hover {
-  border: 1px solid white;
-  z-index: 100;
+.marble-selectable:hover {
+  border: 4px solid red;
 }
-.marble-selectable.marble-white:hover {
-  border: 1px solid black;
-  z-index: 100;
-}
-.marble-selectable.marble-null:hover {
-  border: 1px solid black;
-  z-index: 100;
+.marble-selectable.marble-red:hover {
+  border: 4px solid;
 }
 
-.marble-selected.marble-white {
-  background-color: gold;
-}
-.marble-selected.marble-black {
+.marble-selected{
   background-color: gold;
 }
 
