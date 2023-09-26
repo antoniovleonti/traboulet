@@ -98,6 +98,19 @@ func (cr *challengeRouter) postChallenge(
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
 
+  count := 0
+  for _, ch := range cr.challenges {
+    if !ch.accepted {
+      count++
+    }
+  }
+	if count >= 100 {
+		http.Error(
+      w, "Too many unaccepted challenges; try again later.",
+      http.StatusInternalServerError)
+		return
+	}
+
 	// create challenge
 	path := cr.pathGen.newString(8)
 	bind := func(

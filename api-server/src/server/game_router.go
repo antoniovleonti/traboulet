@@ -4,6 +4,7 @@ import (
 	"game"
 	"github.com/julienschmidt/httprouter"
 	"log"
+  "errors"
 	mrand "math/rand"
 	"net/http"
 	"net/url"
@@ -73,6 +74,10 @@ func (gr *gameRouter) addGame(
 	cookie1, cookie2 *http.Cookie) (string, error) {
 	gr.mutex.Lock()
 	defer gr.mutex.Unlock()
+
+	if len(gr.games) >= 100 {
+		return "", errors.New("Too many games in play; try again later.")
+	}
 
 	// Randomize who plays white
 	if mrand.Intn(2) == 0 {
