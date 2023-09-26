@@ -113,3 +113,30 @@ func TestLongLivedRequestDoesntBlockMutex(t *testing.T) {
 		t.Error("could not aquire mutex")
 	}
 }
+
+func TestGameNumberLimit(t *testing.T) {
+	gr := newGameRouter("/")
+
+  for i := 0; i < 100; i++ {
+    _, err := gr.addGame(
+      func() {}, game.Config{TimeControl: 1 * time.Minute},
+      fakeWhiteCookie(), fakeBlackCookie())
+    if err != nil {
+      t.Error(err)
+    }
+  }
+
+  empty, err := gr.addGame(
+    func() {}, game.Config{TimeControl: 1 * time.Minute},
+    fakeWhiteCookie(), fakeBlackCookie())
+  if err == nil {
+    t.Error("expected 101st game add to fail")
+  }
+  if empty != "" {
+    t.Error("expected 101st game to be nil")
+  }
+
+	if len(gr.games) != 100 {
+		t.Error("expected number of games to equal 100")
+	}
+}

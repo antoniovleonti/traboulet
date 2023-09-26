@@ -22,19 +22,10 @@ func TestNewChallengeRouter(t *testing.T) {
 func TestPostChallenge(t *testing.T) {
 	cr := newChallengeRouter("/", nil)
 
-	// create body
-	config := game.Config{10 * time.Minute}
-	b, err := json.Marshal(config)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// make request
-	req, err := http.NewRequest("POST", "/", bytes.NewReader(b))
-	req.AddCookie(fakeWhiteCookie())
-
-	// handle request
-	rr := httptest.NewRecorder()
-	cr.ServeHTTP(rr, req)
+	rr, err := post10MinChallenge(cr)
+  if err != nil {
+    t.Error(err)
+  }
 
 	// check status
 	if rr.Code != http.StatusSeeOther {
@@ -228,4 +219,55 @@ func TestDeleteOldChallenges(t *testing.T) {
 	if _, ok := cr.challenges["too old"]; ok {
 		t.Error("expected too old challenge to be deleted")
 	}
+}
+
+func post10MinChallenge(
+  cr *challengeRouter) (*httptest.ResponseRecorder, error) {
+	config := game.Config{10 * time.Minute}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+  req, err := http.NewRequest("POST", "/", bytes.NewReader(b))
+  if err != nil {
+    return nil, err
+  }
+  req.AddCookie(fakeWhiteCookie())
+  // handle request
+  rr := httptest.NewRecorder()
+  cr.ServeHTTP(rr, req)
+
+  return rr, nil
+}
+
+func TestChallengeCountLimit(t *testing.T) {
+	cr := newChallengeRouter("/", nil)
+
+	for i := 0; i < 100; i++ {
+    rr, err := post10MinChallenge(cr)
+    if err != nil {
+      t.Error(err)
+    }
+    // check status
+    if rr.Code != http.StatusSeeOther {
+      t.Errorf(
+        "code %d does not match expectation %d; body: %s", rr.Code,
+        http.StatusSeeOther, rr.Body.String())
+    }
+  }
+
+	if len(cr.challenges) != 100 {
+		t.Errorf("expected exactly 100 challenges (got %d)", len(cr.challenges))
+	}
+
+  rr, err := post10MinChallenge(cr)
+  if err != nil {
+    t.Error(err)
+  }
+  // check status
+  if rr.Code != http.StatusInternalServerError {
+    t.Errorf(
+      "code %d does not match expectation %d", rr.Code,
+      http.StatusInternalServerError)
+  }
 }
