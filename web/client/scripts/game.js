@@ -77,4 +77,16 @@ function update(state) {
   moveHistoryDisplay.update(state.history);
 }
 
+document.getElementById('resign-button').addEventListener('click', () => {
+  fetch(getURLBase() + '/resignation',
+        { method: 'POST', body: null })
+      .then(response => {
+        if (!response.ok) {
+          response.text().then(txt => {
+            console.log(`${response.status} ${txt}`);
+          });
+        }
+      });
+});
+
 getStateAndUpdate();

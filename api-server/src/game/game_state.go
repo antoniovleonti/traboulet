@@ -208,18 +208,20 @@ func (gs *gameState) updateStatus() {
 	defer func() {
 		gs.status = newStatus
 		if newStatus != statusOngoing {
-			gs.lastSnapshot().whoseTurn = agentNil
+      gs.teardown()
 		}
 	}()
 	// Check for preexisting "sticky" status
 	if gs.status != statusOngoing {
 		newStatus = gs.status
+    return
 	}
 
 	// Win by score
 	for t, p := range gs.agents {
 		if p.score >= gs.winThreshold {
 			newStatus = t.winStatus()
+      return
 		}
 	}
 
@@ -227,11 +229,13 @@ func (gs *gameState) updateStatus() {
 	gs.validMoves = gs.getValidMoves()
 	if len(gs.validMoves) == 0 {
 		newStatus = gs.lastSnapshot().whoseTurn.otherAgent().winStatus()
+    return
 	}
 
 	// Draw by repetition
 	if gs.posToCount[gs.getPositionString()] >= 3 {
 		newStatus = statusDraw
+    return
 	}
 }
 
@@ -304,13 +308,7 @@ func (gs *gameState) ExecuteMove(move Move) error {
 		if !agent.startTurn(gs.playerTimeoutCallback) {
 			panic("startTurn failed!")
 		}
-	} else {
-		gs.teardown()
-		if gs.onGameOver != nil {
-			gs.onGameOver()
-		}
 	}
-
 	return nil
 }
 
@@ -321,7 +319,7 @@ func (gs *gameState) playerTimeoutCallback() {
 	// The other team just won
 	gs.status = gs.lastSnapshot().whoseTurn.otherAgent().winStatus()
 
-	gs.teardown()
+	gs.updateStatus()
 
 	// Notify front-end of update
 	if gs.onAsyncUpdate != nil {
@@ -363,6 +361,8 @@ func (gs *gameState) resign(agent AgentColor) bool {
 	if gs.onGameOver != nil {
 		gs.onGameOver()
 	}
+
+  gs.teardown()
 	return true
 }
 

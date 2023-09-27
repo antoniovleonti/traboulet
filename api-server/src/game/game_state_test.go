@@ -3,6 +3,7 @@ package game
 import (
 	"testing"
 	"time"
+  // "log"
 	// "fmt"
 )
 
@@ -294,12 +295,6 @@ func TestUpdateStatus(t *testing.T) {
 		if actual := test.gs.status; actual != test.status {
 			t.Errorf("testCases[%d]: status %d != %d", idx, actual, test.status)
 		}
-		if test.status != statusOngoing &&
-			test.gs.lastSnapshot().whoseTurn != agentNil {
-			t.Errorf(
-				"testCases[%d]: game not ongoing; expected whoseTurn to be agentNil, "+
-					"got %s", idx, test.gs.lastSnapshot().whoseTurn.String())
-		}
 	}
 }
 
@@ -331,6 +326,12 @@ func TestResign(t *testing.T) {
 		if !onGameOverCalled {
 			t.Error("callback was not called")
 		}
+
+    for _, a := range gs.agents {
+      if a.deadline != nil || a.timer != nil {
+        t.Error("expected all players to have no deadline and no timer")
+      }
+    }
 	}
 }
 
@@ -425,4 +426,21 @@ func TestInvalidTimeControl(t *testing.T) {
 			t.Errorf("expected error when creating game with time %s", tc.String())
 		}
 	}
+}
+
+func TestWinOverridesDraw(t *testing.T) {
+	gs, _ := newGameState(
+		Config{TimeControl: 60 * time.Second}, nil, nil, 30*time.Second)
+
+  gs.posToCount[gs.getPositionString()] = 3
+  gs.agents[agentWhite].score = 7
+  // Here, if we haven't been careful, an ambiguous situation arises: this
+  // position has happened three times (which is the condition for a draw to
+  // happen), but the current player has reached the win threshold. The player
+  // with a winning score should win.
+  gs.updateStatus()
+
+  if gs.status != statusWhiteWon {
+    t.Error("expected white to win")
+  }
 }
