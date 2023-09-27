@@ -93,7 +93,7 @@
 
   border-radius: 50%;
   background-color: white;
-  border: 1px solid black;
+  border: 1px solid currentcolor;
   margin: var(--margin-bg-hole);
   width: var(--bg-hole-size);
   height: var(--bg-hole-size);
@@ -103,14 +103,14 @@
   --margin-bg-line-vertical: calc((100% / 7 - 1px)/ 2);
   width: 1px;
   height: calc(100% - var(--margin-bg-line-vertical) * 2);
-  background-color: black;
+  background-color: currentcolor;
   margin: var(--margin-bg-line-vertical);
 }
 .bg-line-horizontal {
   --margin-bg-line-horizontal: calc((100% / 7 - 1px)/ 2);
   height: 1px;
   width: calc(100% - var(--margin-bg-line-horizontal) * 2);
-  background-color: black;
+  background-color: currentcolor;
   margin: var(--margin-bg-line-horizontal);
 }
 
