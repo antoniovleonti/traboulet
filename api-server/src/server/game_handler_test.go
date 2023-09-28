@@ -315,3 +315,63 @@ func TestPostResignationTwice(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestPostRematchOffer(t *testing.T) {
+	gh, _ := newGameHandler(
+		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+
+	req, err := http.NewRequest("POST", "/resignation", nil)
+	req.AddCookie(fakeWhiteCookie())
+
+	err = handleReqCheckEventStream(gh, req, http.StatusOK)
+	if err != nil {
+		t.Error(err)
+	}
+
+  whiteRematchReq, err := http.NewRequest("POST", "/rematch-offer", nil)
+  if err != nil {
+    t.Error(nil)
+  }
+  whiteRematchReq.AddCookie(fakeWhiteCookie())
+
+	err = handleReqCheckEventStream(gh, whiteRematchReq, http.StatusOK)
+	if err != nil {
+		t.Error(err)
+	}
+
+  blackRematchReq, err := http.NewRequest("POST", "/rematch-offer", nil)
+  if err != nil {
+    t.Error(nil)
+  }
+  blackRematchReq.AddCookie(fakeBlackCookie())
+
+	err = handleReqCheckEventStream(gh, blackRematchReq, http.StatusOK)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestPostRematchOfferNoCookie(t *testing.T) {
+	gh, _ := newGameHandler(
+		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		fakeBlackCookie())
+
+	req, err := http.NewRequest("POST", "/resignation", nil)
+	req.AddCookie(fakeWhiteCookie())
+
+	err = handleReqCheckEventStream(gh, req, http.StatusOK)
+	if err != nil {
+		t.Error(err)
+	}
+
+  whiteRematchReq, err := http.NewRequest("POST", "/rematch-offer", nil)
+  if err != nil {
+    t.Error(nil)
+  }
+
+	err = handleReqCheckEventStream(gh, whiteRematchReq, http.StatusBadRequest)
+	if err == nil {
+		t.Error("expected request to fail")
+	}
+}

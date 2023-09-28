@@ -31,8 +31,9 @@ func newGameHandler(
 		pub:               publisher{},
 		deleteChallengeCb: deleteChallengeCb,
 	}
-	gm, err :=
-		game.NewGameManager(config, white, black, gh.publishUpdate, gh.markComplete)
+	gm, err := game.NewGameManager(
+    config, white, black, gh.publishUpdate, gh.markComplete,
+    gh.undoMarkComplete)
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +43,7 @@ func newGameHandler(
 	gh.router.GET("/state", gh.getState)
 	gh.router.POST("/move", gh.postMove)
 	gh.router.POST("/resignation", gh.postResignation)
+	gh.router.POST("/rematch-offer", gh.postRematchOffer)
 
 	go gh.periodicallySendKeepAlive()
 
@@ -146,11 +148,38 @@ func (gh *gameHandler) postResignation(
 	gh.publishUpdate()
 }
 
+func (gh *gameHandler) postRematchOffer(
+	w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+  c := r.Cookies()
+
+	if len(c) == 0 {
+		http.Error(w, "No cookies provided.", http.StatusUnauthorized)
+		return
+	}
+
+  _, err := gh.gm.OfferRematch(c[0])
+	if err != nil {
+		http.Error(w, "Error: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Write([]byte("success"))
+  // Even if rematch was not started, we can notify other player that a rematch
+  // was requested.
+	gh.publishUpdate()
+}
+
 func (gh *gameHandler) markComplete() {
 	gh.timeMutex.Lock()
 	defer gh.timeMutex.Unlock()
 	t := time.Now()
 	gh.completionTime = &t
+}
+
+func (gh *gameHandler) undoMarkComplete() {
+	gh.timeMutex.Lock()
+	defer gh.timeMutex.Unlock()
+	gh.completionTime = nil
 }
 
 func (gh *gameHandler) DurationSinceCompletion() *time.Duration {

@@ -27,7 +27,7 @@ func fakeBlackCookie() *http.Cookie {
 func TestNewGameManager(t *testing.T) {
 	gm, err := NewGameManager(
 		Config{TimeControl: time.Minute}, fakeWhiteCookie(), fakeBlackCookie(),
-		nil, nil)
+		nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestNewGameManager(t *testing.T) {
 func TestTryMove(t *testing.T) {
 	gm, err := NewGameManager(
 		Config{TimeControl: time.Minute}, fakeWhiteCookie(), fakeBlackCookie(),
-		nil, nil)
+		nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestTryMove(t *testing.T) {
 func TestTryResign(t *testing.T) {
 	gm, err := NewGameManager(
 		Config{TimeControl: 600 * time.Second}, fakeWhiteCookie(),
-		fakeBlackCookie(), nil, nil)
+		fakeBlackCookie(), nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,4 +96,89 @@ func TestTryResign(t *testing.T) {
 	if gm.TryResign(gm.GetBlackCookie()) {
 		t.Error("Was able to resign with black after game was already over!")
 	}
+}
+
+func TestRematchHappyPath(t *testing.T) {
+  gameOverCbCalled := false
+  gameOverCb := func() { gameOverCbCalled = true }
+  rematchCbCalled := false
+  rematchCb := func() { rematchCbCalled = true }
+
+	gm, err := NewGameManager(
+		Config{TimeControl: 600 * time.Second}, fakeWhiteCookie(),
+		fakeBlackCookie(), nil, gameOverCb, rematchCb)
+
+  success := gm.TryResign(fakeWhiteCookie())
+  if !success {
+    t.Error("expected to be able to resign with white")
+  }
+
+  if !gameOverCbCalled {
+    t.Error("expected game over callback to be called")
+  }
+
+  // game is now over, try to rematch.
+  rematchStarted, err := gm.OfferRematch(fakeWhiteCookie())
+  if err != nil {
+    t.Error(err)
+  }
+  if rematchStarted {
+    t.Error("rematch started after only one player offered a rematch")
+  }
+  if !gm.colorToUser[agentWhite].wantsRematch {
+    t.Error("expected white to want rematch")
+  }
+  // Try it again with the same cookie to make sure there's an error
+  rematchStarted, err = gm.OfferRematch(fakeWhiteCookie())
+  if err == nil {
+    t.Error("no error on repeated rematch request")
+  }
+
+  rematchStarted, err = gm.OfferRematch(fakeBlackCookie())
+  if err != nil {
+    t.Error(err)
+  }
+  if !rematchStarted {
+    t.Error("rematch did not start after both players offered rematch")
+  }
+  if !rematchCbCalled {
+    t.Error("expected rematch callback to be called on successful rematch.")
+  }
+
+  // player colors get swapped
+  if gm.cookieToUser[getKeyFromCookie(fakeWhiteCookie())].color != agentBlack {
+    t.Error("expected previous white player to become black")
+  }
+  if gm.cookieToUser[getKeyFromCookie(fakeBlackCookie())].color != agentWhite {
+    t.Error("expected previous black player to become white")
+  }
+
+  if gm.state.status != statusOngoing {
+    t.Error(
+      "expected (entire game to reset and as a result) status to reset to "+
+      "ongoing")
+  }
+
+  if len(gm.state.history) != 1 {
+    t.Error(
+      "expected (entire game to reset and as a result) history length of "+
+      "exactly 1")
+  }
+
+  for _, user := range gm.colorToUser {
+    if user.wantsRematch {
+      t.Error("expected user.wantsRematch to be reset to false")
+    }
+  }
+}
+
+func TestRematchOngoingGame(t *testing.T) {
+	gm, err := NewGameManager(
+		Config{TimeControl: 600 * time.Second}, fakeWhiteCookie(),
+		fakeBlackCookie(), nil, nil, nil)
+
+  _, err = gm.OfferRematch(fakeWhiteCookie())
+  if err == nil {
+    t.Error("expected error; rematch offered while game is still in play.")
+  }
 }
