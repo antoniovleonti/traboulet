@@ -97,21 +97,23 @@ Status:
 <div>
   <h2>Players</h2>
   <div class="player-card">
-    <span id=other-player-color>*****</span><br>
-    Score: <span id=other-player-score>-</span><br>
+    <span id=villain-color>*****</span><br>
+    Score: <span id=villain-score>-</span><br>
     Time:
-    <span id=other-player-clock class="player-clock">00:00</span>
-    <span id=other-player-activity hidden>***</span><br>
+    <span id=villain-clock class="player-clock">00:00</span>
+    <span id=villain-activity hidden>***</span><br>
   </div>
 
   <div class="player-card">
-    <span id=your-color>*****</span>
+    <span id=hero-color>*****</span>
     <span id=you-indicator hidden>(you)</span><br>
-    Score: <span id=your-score>-</span><br>
-    Time: <span id=your-clock class="player-clock">00:00</span>
-    <span id=your-activity hidden>***</span>
+    Score: <span id=hero-score>-</span><br>
+    Time: <span id=hero-clock class="player-clock">00:00</span>
+    <span id=hero-activity hidden>***</span><br>
   </div>
   <button id=resign-button>Resign</button>
+  <button id=rematch-button hidden>
+  Offer rematch (<span id=rematch-offer-count>0</span>/2)</button>
 </div>
 
 </div>

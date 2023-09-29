@@ -4,24 +4,29 @@ const boardDisplay =
     new BoardDisplay(document.getElementById("marble-container"));
 const statusDisplay = new StatusDisplay(document.getElementById("status"));
 const topPlayer = {
-  clock: document.getElementById("other-player-clock"),
+  clock: document.getElementById("villain-clock"),
   firstMoveIndicator:
-      document.getElementById("other-player-first-move-indicator"),
-  color: document.getElementById("other-player-color"),
-  active: document.getElementById("other-player-activity"),
-  score: document.getElementById("other-player-score"),
+      document.getElementById("villain-first-move-indicator"),
+  color: document.getElementById("villain-color"),
+  active: document.getElementById("villain-activity"),
+  score: document.getElementById("villain-score"),
   you: null,
 };
 const bottomPlayer = {
-  clock: document.getElementById("your-clock"),
+  clock: document.getElementById("hero-clock"),
   firstMoveIndicator:
-      document.getElementById("your-first-move-indicator"),
-  color: document.getElementById("your-color"),
-  active: document.getElementById("your-activity"),
-  score: document.getElementById("your-score"),
+      document.getElementById("hero-first-move-indicator"),
+  color: document.getElementById("hero-color"),
+  active: document.getElementById("hero-activity"),
+  score: document.getElementById("hero-score"),
   you: document.getElementById("you-indicator"),
 };
-const playerDisplayManager = new PlayerDisplayManager(topPlayer, bottomPlayer);
+const playerDisplayManager = new PlayerDisplayManager(
+    topPlayer, bottomPlayer,
+    document.getElementById('resign-button'),
+    document.getElementById('rematch-button'),
+    document.getElementById('rematch-offer-count'));
+
 const moveHistoryDisplay =
     new MoveHistoryDisplay(document.getElementById('move-history'));
 
@@ -59,15 +64,20 @@ function update(state) {
   }
 
   console.log("state: ", state);
-  document.getElementById("error").hidden = true
-  document.getElementById("game-dash").hidden = false
+  document.getElementById("error").hidden = true;
+  document.getElementById("game-dash").hidden = false;
+
+  const gameOngoing = state.status == 'ONGOING';
+
+  document.getElementById("resign-button").hidden = !gameOngoing;
+  document.getElementById("rematch-button").hidden = gameOngoing;
 
   const lastSnapshot = state.history[state.history.length-1];
   statusDisplay.update(state.status);
   playerDisplayManager.update(
       state.idToPlayer, state.colorToPlayer,
       state.status == "ONGOING" ? lastSnapshot.whoseTurn : null,
-      state.timeControl, state.firstMoveDeadline);
+      state.timeControl, state.firstMoveDeadline, state.status);
 
   const myID = PlayerDisplayManager.getMyID(Object.keys(state.idToPlayer));
   const isYourTurn = ((myID != null) &&
@@ -79,6 +89,18 @@ function update(state) {
 
 document.getElementById('resign-button').addEventListener('click', () => {
   fetch(getURLBase() + '/resignation',
+        { method: 'POST', body: null })
+      .then(response => {
+        if (!response.ok) {
+          response.text().then(txt => {
+            console.log(`${response.status} ${txt}`);
+          });
+        }
+      });
+});
+
+document.getElementById('rematch-button').addEventListener('click', () => {
+  fetch(getURLBase() + '/rematch-offer',
         { method: 'POST', body: null })
       .then(response => {
         if (!response.ok) {
