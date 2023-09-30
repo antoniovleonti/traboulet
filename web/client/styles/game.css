@@ -146,7 +146,7 @@
   border: 1px dotted red;
 }
 .marble-selectable.marble-red:hover {
-  border: 4px solid;
+  border: 1px dotted red;
 }
 
 .marble-selected{
