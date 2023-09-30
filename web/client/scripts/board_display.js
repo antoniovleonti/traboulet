@@ -1,15 +1,20 @@
 "use strict";
 
 class BoardDisplay {
-  el_;
+  marbleLayer_;
+  inputLayer_;
 
-  constructor(el) {
-    this.el_ = el;
+  constructor(marbleLayer, inputLayer) {
+    this.marbleLayer_ = marbleLayer;
+    this.inputLayer_ = inputLayer;
   }
 
   clear() {
-    while (this.el_.lastChild) {
-      this.el_.removeChild(this.el_.lastChild);
+    while (this.marbleLayer_.lastChild) {
+      this.marbleLayer_.removeChild(this.marbleLayer_.lastChild);
+    }
+    while (this.inputLayer_.lastChild) {
+      this.inputLayer_.removeChild(this.inputLayer_.lastChild);
     }
   }
 
@@ -61,6 +66,12 @@ class BoardDisplay {
     }
   }
 
+  static createInputElement() {
+    const el = document.createElement('div');
+    el.classList.add('input-base');
+    return el;
+  }
+
   static createMoveMap(arr) {
     const movesMap = [];
     for (let y = 0; y < 7; y++) {
@@ -110,26 +121,24 @@ class BoardDisplay {
     this.clear();
 
     // header
-    const marbles = [];
     for (let y = 0; y < board.length; y++) {
-      marbles.push([]);
       for (let x = 0; x < board[y].length; x++) {
         const marble = BoardDisplay.createMarbleFromString(board[y][x]);
+        const input = BoardDisplay.createInputElement();
 
         if (validMoves[y][x].length > 0) {
           // Selection logic
-          marble.classList.add('marble-selectable');
-          marble.classList.add('marble-selectable');
+          input.classList.add('marble-selectable');
           const this_ = this;
-          marble.addEventListener('click', (e) => {
+          input.addEventListener('click', (e) => {
             const selection = { y: y, x: x };
             this_.renderBoardWithSelection(
                 board, validMoves, selection);
           });
         }
 
-        marbles[y].push(marble);
-        this.el_.appendChild(marble);
+        this.marbleLayer_.appendChild(marble);
+        this.inputLayer_.appendChild(input);
       }
     }
   }
@@ -140,27 +149,34 @@ class BoardDisplay {
 
     // header
     const marbles = [];
+    const inputs = [];
     for (let y = 0; y < board.length; y++) {
       marbles.push([]);
+      inputs.push([]);
       for (let x = 0; x < board[y].length; x++) {
         const marble = BoardDisplay.createMarbleFromString(board[y][x]);
         marbles[y].push(marble);
-        this.el_.appendChild(marble);
+        this.marbleLayer_.appendChild(marble);
+
+        const input = BoardDisplay.createInputElement();
+        inputs[y].push(input);
+        this.inputLayer_.appendChild(input);
       }
     }
 
     const selectedMarble = marbles[selection.y][selection.x];
+    const selectedInput = inputs[selection.y][selection.x];
     const validMovesFromSelection = validMoves[selection.y][selection.x];
     selectedMarble.classList.add('marble-selected');
-    selectedMarble.classList.add('marble-selectable');
-    selectedMarble.addEventListener('click', (e) => {
+    selectedInput.classList.add('marble-selectable');
+    selectedInput.addEventListener('click', (e) => {
       this_.renderBoardNoSelection(board, validMoves);
     });
 
     for (const dirStr of validMovesFromSelection) {
       const d = BoardDisplay.directionStrToDxDy(dirStr);
 
-      const moveDestination = marbles[selection.y + d.y][selection.x + d.x];
+      const moveDestination = inputs[selection.y + d.y][selection.x + d.x];
       moveDestination.classList.add('marble-selectable');
       // Add listener to make move
       moveDestination.addEventListener(

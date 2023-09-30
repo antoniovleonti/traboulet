@@ -1,7 +1,8 @@
 "use strict";
 
 const boardDisplay =
-    new BoardDisplay(document.getElementById("marble-container"));
+    new BoardDisplay(document.getElementById("board-marble-layer"),
+                     document.getElementById("board-input-layer"));
 const statusDisplay = new StatusDisplay(document.getElementById("status"));
 const topPlayer = {
   clock: document.getElementById("villain-clock"),
