@@ -175,7 +175,7 @@ func (gs *gameState) ValidateMove(move Move) (*MoveWMarblesMoved, error) {
 
 	// Check that you are not pushing your own piece off the board
 	foundEmpty := false
-	marblesMoved := 1
+	marblesMoved := 0
 	var x, y int = move.X, move.Y
 	for ; gs.isInBounds(x, y); x, y = x+move.dx(), y+move.dy() {
 		if gs.lastSnapshot().board[y][x] == marbleNil {

@@ -81,7 +81,10 @@ class BoardDisplay {
       }
     }
     for (const move of arr) {
-      movesMap[move.y][move.x].push(move.d);
+      movesMap[move.y][move.x].push({
+        d: move.d,
+        marblesMoved: move.marblesMoved,
+      });
     }
     return movesMap;
   }
@@ -174,17 +177,22 @@ class BoardDisplay {
       this_.renderBoardNoSelection(board, validMoves);
     });
 
-    for (const dirStr of validMovesFromSelection) {
-      const d = BoardDisplay.directionStrToDxDy(dirStr);
+    for (const move of validMovesFromSelection) {
+      const d = BoardDisplay.directionStrToDxDy(move.d);
 
-      const moveDestination = inputs[selection.y + d.y][selection.x + d.x];
-      moveDestination.classList.add('marble-selectable');
-      // Add listener to make move
-      moveDestination.addEventListener(
-          'click', (e) => {
-            BoardDisplay.postMove(
-                { X: selection.x, Y: selection.y, D: dirStr });
-          });
+      let x = selection.x;
+      let y = selection.y;
+      for (let diff = 0; diff < Math.max(1, move.marblesMoved - 1); diff++) {
+        x += d.x;
+        y += d.y;
+        if (x < 0 || x >= 7 || y < 0 || y >= 7) {
+          break;
+        }
+        inputs[y][x].classList.add('marble-selectable');
+        inputs[y][x].addEventListener('click', (e) => {
+          BoardDisplay.postMove({ X: selection.x, Y: selection.y, D: move.d });
+        });
+      }
     }
   }
 }
