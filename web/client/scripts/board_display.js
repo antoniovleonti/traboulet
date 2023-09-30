@@ -145,7 +145,6 @@ class BoardDisplay {
 
   renderBoardWithSelection(board, validMoves, selection) {
     this.clear();
-    const this_ = this;
 
     // header
     const marbles = [];
@@ -169,6 +168,8 @@ class BoardDisplay {
     const validMovesFromSelection = validMoves[selection.y][selection.x];
     selectedMarble.classList.add('marble-selected');
     selectedInput.classList.add('marble-selectable');
+
+    const this_ = this;
     selectedInput.addEventListener('click', (e) => {
       this_.renderBoardNoSelection(board, validMoves);
     });
