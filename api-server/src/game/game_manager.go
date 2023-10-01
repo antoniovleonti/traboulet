@@ -97,6 +97,9 @@ func (gm *GameManager) setUser(color AgentColor, cookie *http.Cookie) bool {
 }
 
 func (gm *GameManager) TryMove(m Move, c *http.Cookie) error {
+  gm.mutex.RLock()
+  defer gm.mutex.RUnlock()
+
 	user, ok := gm.cookieToUser[getKeyFromCookie(c)]
 	if !ok {
 		return errors.New("Cookie not found.")
@@ -175,6 +178,9 @@ func (gm *GameManager) RematchOfferErrCheck(c *http.Cookie) error {
 }
 
 func (gm GameManager) GetClientView() ClientView {
+  gm.mutex.RLock()
+  defer gm.mutex.RUnlock()
+
 	colorToPlayer := make(map[string]clientViewPlayer)
 	idToPlayer := make(map[string]clientViewPlayer)
 	for color, user := range gm.colorToUser {
