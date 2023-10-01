@@ -237,6 +237,7 @@ class BoardDisplay {
 
       let x = selection.x;
       let y = selection.y;
+      // For each valid move from selection add click & hover listeners.
       for (let diff = 0; diff < move.marblesMoved; diff++) {
         x += d.x;
         y += d.y;
