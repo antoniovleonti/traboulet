@@ -9,10 +9,14 @@ class BoardDisplay {
     this.inputLayer_ = inputLayer;
   }
 
-  clear() {
+  clearMarbles() {
     while (this.marbleLayer_.lastChild) {
       this.marbleLayer_.removeChild(this.marbleLayer_.lastChild);
     }
+  }
+
+  clear() {
+    this.clearMarbles();
     while (this.inputLayer_.lastChild) {
       this.inputLayer_.removeChild(this.inputLayer_.lastChild);
     }
@@ -116,22 +120,76 @@ class BoardDisplay {
       case "RIGHT":
         return { x: 1, y: 0 };
       default:
-        throw new Error("invalid diration");
+        throw new Error("Invalid direction " + s + "!");
+    }
+  }
+
+  renderMarblesNoPreview(board) {
+    this.clearMarbles();
+
+    for (let y = 0; y < board.length; y++) {
+      for (let x = 0; x < board[y].length; x++) {
+        const marble = BoardDisplay.createMarbleFromString(board[y][x]);
+        this.marbleLayer_.appendChild(marble);
+      }
+    }
+  }
+
+  renderMarblesWithPreview(board, selection, move) {
+    this.clearMarbles();
+
+    const moved = [];
+    for (let y = 0; y < board.length; y++) {
+      moved.push([]);
+      for (let x = 0; x < board[y].length; x++) {
+        moved[y].push(false);
+      }
+    }
+    // don't edit passed array
+    const d = BoardDisplay.directionStrToDxDy(move.d);
+    // edit board to include move
+    board = structuredClone(board);
+    let marblesMoved = 0;
+    let tmp = ' ';
+    let x = selection.x;
+    let y = selection.y;
+    for (; y < 7 && y >= 0 && x < 7 && y >= 0;) {
+      [ board[y][x], tmp ] = [ tmp, board[y][x] ];
+      moved[y][x] = true;
+      if (marblesMoved == move.marblesMoved) {
+        break;
+      }
+      marblesMoved++;
+      x += d.x;
+      y += d.y;
+    }
+
+    const marbles = []
+    for (let y = 0; y < board.length; y++) {
+      marbles.push([]);
+      for (let x = 0; x < board[y].length; x++) {
+        const marble = BoardDisplay.createMarbleFromString(board[y][x]);
+        if (moved[y][x]) {
+          marble.classList.add('marble-ghost');
+        }
+        marbles[y].push(marble);
+        this.marbleLayer_.appendChild(marble);
+      }
     }
   }
 
   renderBoardNoSelection(board, validMoves) {
     this.clear();
 
+    this.renderMarblesNoPreview(board);
     // header
     for (let y = 0; y < board.length; y++) {
       for (let x = 0; x < board[y].length; x++) {
-        const marble = BoardDisplay.createMarbleFromString(board[y][x]);
         const input = BoardDisplay.createInputElement();
 
         if (validMoves[y][x].length > 0) {
           // Selection logic
-          input.classList.add('marble-selectable');
+          input.classList.add('input-selectable');
           const this_ = this;
           input.addEventListener('click', (e) => {
             const selection = { y: y, x: x };
@@ -140,7 +198,6 @@ class BoardDisplay {
           });
         }
 
-        this.marbleLayer_.appendChild(marble);
         this.inputLayer_.appendChild(input);
       }
     }
@@ -149,30 +206,28 @@ class BoardDisplay {
   renderBoardWithSelection(board, validMoves, selection) {
     this.clear();
 
-    // header
-    const marbles = [];
-    const inputs = [];
-    for (let y = 0; y < board.length; y++) {
-      marbles.push([]);
-      inputs.push([]);
-      for (let x = 0; x < board[y].length; x++) {
-        const marble = BoardDisplay.createMarbleFromString(board[y][x]);
-        marbles[y].push(marble);
-        this.marbleLayer_.appendChild(marble);
+    const this_ = this;
 
+    this.renderMarblesNoPreview(board);
+    // header
+    const inputs = [];
+    const isPreviewListener = [];
+    for (let y = 0; y < board.length; y++) {
+      inputs.push([]);
+      isPreviewListener.push([]);
+      for (let x = 0; x < board[y].length; x++) {
         const input = BoardDisplay.createInputElement();
         inputs[y].push(input);
         this.inputLayer_.appendChild(input);
+
+        isPreviewListener[y].push(false);
       }
     }
 
-    const selectedMarble = marbles[selection.y][selection.x];
     const selectedInput = inputs[selection.y][selection.x];
     const validMovesFromSelection = validMoves[selection.y][selection.x];
-    selectedMarble.classList.add('marble-selected');
-    selectedInput.classList.add('marble-selectable');
+    selectedInput.classList.add('input-selected');
 
-    const this_ = this;
     selectedInput.addEventListener('click', (e) => {
       this_.renderBoardNoSelection(board, validMoves);
     });
@@ -182,17 +237,34 @@ class BoardDisplay {
 
       let x = selection.x;
       let y = selection.y;
-      for (let diff = 0; diff < Math.max(1, move.marblesMoved - 1); diff++) {
+      for (let diff = 0; diff < move.marblesMoved; diff++) {
         x += d.x;
         y += d.y;
         if (x < 0 || x >= 7 || y < 0 || y >= 7) {
           break;
         }
-        inputs[y][x].classList.add('marble-selectable');
+        isPreviewListener[y][x] = true;
+        inputs[y][x].classList.add('input-selectable');
         inputs[y][x].addEventListener('click', (e) => {
           BoardDisplay.postMove({ X: selection.x, Y: selection.y, D: move.d });
         });
+        inputs[y][x].addEventListener('mouseover', (e) => {
+          this_.renderMarblesWithPreview(board, selection, move);
+        });
       }
     }
+
+    for (let y = 0; y < inputs.length; y++) {
+      for (let x = 0; x < inputs[y].length; x++) {
+        if (!isPreviewListener[y][x]) {
+          inputs[y][x].addEventListener('mouseover', (e) => {
+            this_.renderMarblesNoPreview(board);
+          });
+        }
+      }
+    }
+    inputs[selection.y][selection.x].addEventListener('mouseover', (e) => {
+      this_.renderMarblesNoPreview(board);
+    });
   }
 }

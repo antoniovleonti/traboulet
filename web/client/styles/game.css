@@ -121,12 +121,6 @@
   border: 1px solid;
   box-shadow: 3px 3px;
 }
-
-.input-base {
-  width: calc(100% / 7);
-  height: calc(100% / 7);
-}
-
 .marble-white {
   background-color: #EDEADE;
 }
@@ -140,18 +134,22 @@
   border: none;
   box-shadow: none;
 }
-
-.marble-selectable:hover {
-  border: 2px dotted red;
-}
-
-.marble-selected{
-  background-color: gold;
-}
-
 .marble-ghost {
   opacity: 0.5;
 }
+
+.input-selectable:hover {
+  border: 2px dotted red;
+}
+.input-selected{
+  border: 2px solid blue;
+}
+.input-base {
+  width: calc(100% / 7);
+  height: calc(100% / 7);
+  z-index: 100;
+}
+
 
 #move-history li {
   display: inline;
