@@ -76,7 +76,7 @@ func TestCancel(t *testing.T) {
 		appendSub(&doneSubs)
 		appendSub(&cancelSubs)
 	}
-	time.Sleep(time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 
 	// cancel all the cancel subscribers
 	log.Print("cancelling all cancelSubs")
