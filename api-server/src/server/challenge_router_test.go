@@ -149,8 +149,7 @@ func TestJoinNonExistentID(t *testing.T) {
 	cr := newChallengeRouter("/", nil)
 
 	// This should trigger the above callback
-	req, err :=
-		http.NewRequest("POST", "/nonexistent/join", nil)
+	req, err := http.NewRequest("POST", "/nonexistent/join", nil)
 	if err != nil {
 		t.Error(err)
 	}

@@ -14,7 +14,6 @@ import (
 
 type gameRouter struct {
 	router     *httprouter.Router
-	challenges map[string]*challengeHandler
 	games      map[string]*gameHandler
 	pathGen    *nonCryptoStringGen
 	prefix     string

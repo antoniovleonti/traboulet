@@ -1,6 +1,7 @@
 package server
 
 import (
+  "log"
 	"bytes"
 	"encoding/json"
 	"game"
@@ -14,21 +15,21 @@ import (
 func TestNewMatchmaker(t *testing.T) {
 	var _ http.Handler = (*rootRouter)(nil)
 
-	rr := NewRootRouter()
-	if rr == nil {
+	rtr := NewRootRouter()
+	if rtr == nil {
 		t.Error("rootRouter was nil")
 	}
 }
 
 func TestServeHTTPSetsCookie(t *testing.T) {
-	rr := NewRootRouter()
+	rtr := NewRootRouter()
 
 	req, err := http.NewRequest("GET", "/foo/bar", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	resp := httptest.NewRecorder()
-	rr.ServeHTTP(resp, req)
+	rtr.ServeHTTP(resp, req)
 
 	if resp.Header().Get("Set-Cookie") == "" {
 		t.Error("cookie was not set")
@@ -37,7 +38,7 @@ func TestServeHTTPSetsCookie(t *testing.T) {
 
 // test fwdToChallengeRouter
 func TestGetChallengesMapFromRoot(t *testing.T) {
-	rr := NewRootRouter()
+	rtr := NewRootRouter()
 
 	// test both with and without trailing slash
 	for _, path := range []string{"/challenges", "/challenges/"} {
@@ -46,7 +47,7 @@ func TestGetChallengesMapFromRoot(t *testing.T) {
 			t.Fatal(err)
 		}
 		resp := httptest.NewRecorder()
-		rr.ServeHTTP(resp, req)
+		rtr.ServeHTTP(resp, req)
 
 		if resp.Code != http.StatusOK {
 			t.Errorf("expected code %d, got %d", http.StatusOK, resp.Code)
@@ -54,10 +55,7 @@ func TestGetChallengesMapFromRoot(t *testing.T) {
 	}
 }
 
-// Test full user journey from challenge to playing moves in a game.
-func TestFlowFromChallengeToPlay(t *testing.T) {
-	rr := NewRootRouter()
-
+func addAcceptedGame(rtr *rootRouter, t *testing.T) string {
 	// add challenge
 	b, err := json.Marshal(game.Config{TimeControl: 1 * time.Minute})
 	if err != nil {
@@ -70,7 +68,7 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 	}
 	postChallengeReq.AddCookie(fakeWhiteCookie())
 	postChallengeResp := httptest.NewRecorder()
-	rr.ServeHTTP(postChallengeResp, postChallengeReq)
+	rtr.ServeHTTP(postChallengeResp, postChallengeReq)
 
 	// get challenges
 	getChallengesReq, err := http.NewRequest("GET", "/challenges", nil)
@@ -78,7 +76,7 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 		t.Error(err)
 	}
 	getChallengesResp := httptest.NewRecorder()
-	rr.ServeHTTP(getChallengesResp, getChallengesReq)
+	rtr.ServeHTTP(getChallengesResp, getChallengesReq)
 	// decode
 	var challenges map[string]challengeHandlerView
 	err = json.NewDecoder(getChallengesResp.Body).Decode(&challenges)
@@ -101,14 +99,23 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 	}
 	joinChallengeReq.AddCookie(fakeBlackCookie())
 	joinChallengeResp := httptest.NewRecorder()
-	rr.ServeHTTP(joinChallengeResp, joinChallengeReq)
+	rtr.ServeHTTP(joinChallengeResp, joinChallengeReq)
 
 	// check response
 	if joinChallengeResp.Code != http.StatusSeeOther {
 		t.Errorf("expected status %d; got %d",
 			http.StatusSeeOther, joinChallengeResp.Code)
 	}
-	gamePath := joinChallengeResp.Header().Get("Location")
+  log.Print(joinChallengeResp.Header().Get("Location"))
+	return joinChallengeResp.Header().Get("Location")
+
+}
+
+// Test full user journey from challenge to playing moves in a game.
+func TestFlowFromChallengeToPlay(t *testing.T) {
+	rtr := NewRootRouter()
+
+  gamePath := addAcceptedGame(rtr, t)
 
 	// check existence of game
 	getGameReq, err := http.NewRequest("GET", gamePath+"/state", nil)
@@ -116,7 +123,7 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 		t.Error(err)
 	}
 	getGameResp := httptest.NewRecorder()
-	rr.ServeHTTP(getGameResp, getGameReq)
+	rtr.ServeHTTP(getGameResp, getGameReq)
 
 	if getGameResp.Code != http.StatusOK {
 		t.Errorf("expected status %d, got %d", http.StatusOK, getGameResp.Code)
@@ -134,19 +141,32 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 		t.Error(err)
 	}
 	gameID := strings.Split(gamePath, "/")[2]
-	postMoveReq.AddCookie(rr.gameRtr.games[gameID].gm.GetWhiteCookie())
+	postMoveReq.AddCookie(rtr.gameRtr.games[gameID].gm.GetWhiteCookie())
 	postMoveResp := httptest.NewRecorder()
-	rr.ServeHTTP(postMoveResp, postMoveReq)
+	rtr.ServeHTTP(postMoveResp, postMoveReq)
 
 	if postMoveResp.Code != http.StatusOK {
 		t.Errorf("expected status %d, got %d", http.StatusOK, postMoveResp.Code)
 	}
 
 	completionT := time.Now().Add(-1 * time.Hour)
-	rr.gameRtr.games[gameID].completionTime = &completionT
-	rr.gameRtr.deleteGamesOlderThan(1 * time.Minute)
+	rtr.gameRtr.games[gameID].completionTime = &completionT
+	rtr.gameRtr.deleteGamesOlderThan(1 * time.Minute)
 
-	if len(rr.challengeRtr.challenges) != 0 {
+	if len(rtr.challengeRtr.challenges) != 0 {
 		t.Error("expected challenge to be deleted")
 	}
+}
+
+func TestDeleteOldChallengesAndDeleteChallengeCbRace(t *testing.T) {
+	rtr := NewRootRouter()
+  path := addAcceptedGame(rtr, t)
+	gameID := strings.Split(path, "/")[2]
+
+  game, ok := rtr.gameRtr.games[gameID]
+  if !ok {
+    t.Error("game doesn't exist")
+  }
+  go rtr.challengeRtr.deleteOldChallenges(10 * time.Minute)
+  game.deleteChallengeCb()
 }

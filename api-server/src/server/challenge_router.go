@@ -114,8 +114,8 @@ func (cr *challengeRouter) postChallenge(
 	// create challenge
 	path := cr.pathGen.newString(8)
 	bind := func(
-		ch *challengeHandler, c game.Config, c1, c2 *http.Cookie) (
-		string, error) {
+		ch *challengeHandler, c game.Config, c1, c2 *http.Cookie) (string, error) {
+
 		return cr.onChallengeAccepted(ch, path, c, c1, c2)
 	}
 	challenge, err := newChallengeHandler(cookie, config, bind)
@@ -156,6 +156,9 @@ func (cr *challengeRouter) getChallenges(
 func (cr *challengeRouter) onChallengeAccepted(
 	ch *challengeHandler, id string, config game.Config, cookie1,
 	cookie2 *http.Cookie) (string, error) {
+  cr.mutex.RLock()
+  defer cr.mutex.RUnlock()
+
 	if _, ok := cr.challenges[id]; !ok {
 		// ???? challenge doesn't exist!
 		return "", errors.New("Challenge " + id + " (unexpectedly) does not exist.")
@@ -167,6 +170,8 @@ func (cr *challengeRouter) onChallengeAccepted(
 	}
 
 	deleteCb := func() {
+    cr.mutex.Lock()
+    defer cr.mutex.Unlock()
 		delete(cr.challenges, id)
 	}
 
