@@ -24,7 +24,7 @@ class BoardDisplay {
 
   update(board, validMoves, isYourTurn) {
     const moves = BoardDisplay.createMoveMap(isYourTurn ? validMoves : []);
-    this.renderBoardNoSelection(board, moves);
+    this.renderNoSelection(board, moves);
   }
 
   static createWhiteMarble() {
@@ -178,7 +178,7 @@ class BoardDisplay {
     }
   }
 
-  renderBoardNoSelection(board, validMoves) {
+  renderNoSelection(board, validMoves) {
     this.clear();
 
     this.renderMarblesNoPreview(board);
@@ -193,7 +193,7 @@ class BoardDisplay {
           const this_ = this;
           input.addEventListener('click', (e) => {
             const selection = { y: y, x: x };
-            this_.renderBoardWithSelection(
+            this_.renderSelection(
                 board, validMoves, selection);
           });
         }
@@ -203,7 +203,7 @@ class BoardDisplay {
     }
   }
 
-  renderBoardWithSelection(board, validMoves, selection) {
+  renderSelection(board, validMoves, selection) {
     this.clear();
 
     const this_ = this;
@@ -229,7 +229,7 @@ class BoardDisplay {
     selectedInput.classList.add('input-selected');
 
     selectedInput.addEventListener('click', (e) => {
-      this_.renderBoardNoSelection(board, validMoves);
+      this_.renderNoSelection(board, validMoves);
     });
 
     for (const move of validMovesFromSelection) {
@@ -260,6 +260,9 @@ class BoardDisplay {
         if (!isPreviewListener[y][x]) {
           inputs[y][x].addEventListener('mouseover', (e) => {
             this_.renderMarblesNoPreview(board);
+          });
+          inputs[y][x].addEventListener('click', (e) => {
+            this_.renderNoSelection(board, validMoves);
           });
         }
       }
