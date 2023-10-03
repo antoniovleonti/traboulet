@@ -150,12 +150,27 @@
   z-index: 100;
 }
 
-
+#move-history-wrapper {
+  --move-history-wrapper-padding-tb: 10px;
+  padding-top: var(--move-history-wrapper-padding-tb);
+  padding-bottom: var(--move-history-wrapper-padding-tb);
+  border: 1px solid;
+  white-space: nowrap;
+  overflow-x: scroll;
+}
 #move-history li {
   display: inline;
 }
 #move-history li::after {
   content: ", ";
+}
+#move-history li:last-child::after {
+  content: "";
+}
+.move-history--last-move {
+  background-color: lightgrey;
+  padding: 5px;
+  border-radius: 10px;
 }
 
 #resign-button {
@@ -169,11 +184,6 @@
 #game-dash {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-}
-
-#move-history li:nth-child(even)::after {
-  content: "\a";
-  white-space: pre;
 }
 
 }

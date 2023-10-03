@@ -23,6 +23,11 @@ Game doesn't exist or the server is down.
 </div>
 
 <div>
+<h2>Moves</h2>
+<div id=move-history-wrapper>
+  <ol id=move-history></ol>
+</div>
+</div>
 
 <div id=game-dash>
 
@@ -30,7 +35,6 @@ Game doesn't exist or the server is down.
 <h2>Info</h2>
 Status:
 <span id=status>NOT FOUND</span><br>
-<ol id=move-history></ol>
 </div>
 
 <div id=board-section>
@@ -122,6 +126,8 @@ Status:
 
 </body>
 
+<script src='/scripts/game_utils.js'></script>
+<script src='/scripts/history_manager.js'></script>
 <script src='/scripts/clock_display.js'></script>
 <script src='/scripts/player_display.js'></script>
 <script src='/scripts/player_display_manager.js'></script>

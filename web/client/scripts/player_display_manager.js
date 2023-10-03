@@ -20,7 +20,7 @@ class PlayerDisplayManager {
 
   update(idToPlayer, colorToPlayer, whoseTurn, timeControl, firstMoveDeadline,
          status) {
-    let myID = PlayerDisplayManager.getMyID(Object.keys(idToPlayer));
+    let myID = getMyID();
 
     if (myID == null) {
       this.resignButton_.hidden = true;
@@ -51,18 +51,5 @@ class PlayerDisplayManager {
       this.rematchCounter_.appendChild(
           document.createTextNode(""+rematchCounterVal));
     }
-  }
-
-  static getMyID(ids) {
-    let cookies = document.cookie.split(";");
-    for (const id of ids) {
-      for (const cookie of cookies) {
-        let nameval = cookie.split("=");
-        if (nameval[0].trim() == id) {
-          return id;
-        }
-      }
-    }
-    return null
   }
 }

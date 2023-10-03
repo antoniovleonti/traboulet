@@ -28,8 +28,10 @@ const playerDisplayManager = new PlayerDisplayManager(
     document.getElementById('rematch-button'),
     document.getElementById('rematch-offer-count'));
 
-const moveHistoryDisplay =
+const moveListDisplay =
     new MoveHistoryDisplay(document.getElementById('move-history'));
+
+const historyManager = new HistoryManager(boardDisplay, moveListDisplay);
 
 function getURLBase() {
   let urlParts = window.location.href.split("/");
@@ -80,12 +82,7 @@ function update(state) {
       state.status == "ONGOING" ? lastSnapshot.whoseTurn : null,
       state.timeControl, state.firstMoveDeadline, state.status);
 
-  const myID = PlayerDisplayManager.getMyID(Object.keys(state.idToPlayer));
-  const isYourTurn = ((myID != null) &&
-                      (state.idToPlayer[myID].color == lastSnapshot.whoseTurn));
-  boardDisplay.update(lastSnapshot.board, state.validMoves, isYourTurn);
-
-  moveHistoryDisplay.update(state.history);
+  historyManager.update(state.history, state.validMoves, state.idToPlayer);
 }
 
 document.getElementById('resign-button').addEventListener('click', () => {
