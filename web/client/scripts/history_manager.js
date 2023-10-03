@@ -34,19 +34,17 @@ class HistoryManager {
              this.history_[this.history_.length-1].whoseTurn));
 
     this.last();
-    this.render();
   }
 
   render() {
-    console.log(this.history_.length - 1, this.currentSnapshotIdx_);
-    const canMove =
-        this.isYourTurn_ &&
-        (this.currentSnapshotIdx_ == this.history_.length-1);
-    console.log(canMove);
+    const canMove = this.isYourTurn_ &&
+                    (this.currentSnapshotIdx_ == this.history_.length-1);
+
+    console.log(this.history_[this.currentSnapshotIdx_].board);
     this.boardDisplay_.update(this.history_[this.currentSnapshotIdx_].board,
                               this.validMoves_, canMove);
 
-    this.moveListDisplay_.update(this.history_);
+    this.moveListDisplay_.update(this.history_, this.currentSnapshotIdx_);
   }
 
   next() {

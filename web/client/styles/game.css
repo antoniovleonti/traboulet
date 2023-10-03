@@ -173,6 +173,29 @@
   border-radius: 10px;
 }
 
+#move-history-controls {
+  display: flex;
+  justify-content: center;
+}
+#move-history-first {
+  border-top-right-radius: 0;
+  border-top-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+  border-top: none;
+}
+#move-history-prev, #move-history-next {
+  border-radius: 0;
+  border-right: none;
+  border-top: none;
+}
+#move-history-last {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top: none;
+}
+
 #resign-button {
   --resign-button-margin: 0.5em;
   margin-top: var(--resign-button-margin);

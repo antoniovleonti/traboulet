@@ -13,35 +13,28 @@ class MoveHistoryDisplay {
     }
   }
 
-  update(history) {
+  update(history, selectedIdx) {
     this.clear();
 
-    let lastA = null;
-    for (const snapshot of history) {
-      if (snapshot.lastMove == null) {
-        continue;
-      }
-      const move = snapshot.lastMove;
+    let selectedAnchor;
+    for (let i = 0; i < history.length; i++) {
+      const move = history[i].lastMove;
       const li = document.createElement("li");
-      lastA = document.createElement('a');
-      lastA.appendChild(document.createTextNode(
-          "" + "ABCDEFG"[move.x] + (7 - move.y) + " " + move.d));
-      li.appendChild(lastA);
+      const a = document.createElement('a');
+      if (i == selectedIdx) {
+        selectedAnchor = a;
+      }
+      if (move == null) {
+        a.appendChild(document.createTextNode('start'));
+      } else {
+        a.appendChild(document.createTextNode(
+            "" + "ABCDEFG"[move.x] + (7 - move.y) + " " + move.d));
+      }
+      li.appendChild(a);
       this.ol_.appendChild(li);
     }
 
-    if (lastA != null) {
-      lastA.classList.add('move-history--last-move');
-    }
-
-    if (this.ol_.lastChild != null) {
-      this.ol_.lastChild.scrollIntoView(
-          { inline: 'center', block: 'center' });
-    } else {
-      // append an empty li for proper height
-      const li = document.createElement('li');
-      li.appendChild(document.createTextNode('(no moves)'));
-      this.ol_.appendChild(li);
-    }
+    selectedAnchor.classList.add('move-history--last-move');
+    selectedAnchor.scrollIntoView({ inline: 'center', block: 'center' });
   }
 }

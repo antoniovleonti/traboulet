@@ -246,18 +246,25 @@ func (gs *gameState) ExecuteMove(move Move) error {
 	if _, err := gs.ValidateMove(move); err != nil {
 		return err
 	}
+  nextSnapshot := snapshot{
+		board:     gs.lastSnapshot().board.deepCopy(),
+		whoseTurn: gs.lastSnapshot().whoseTurn.otherAgent(),
+		lastMove: &MoveWMarblesMoved{
+			X:            move.X,
+			Y:            move.Y,
+			D:            move.D,
+			MarblesMoved: 0, // Will be updated later
+		},
+	}
 
-	board := gs.lastSnapshot().board
-
-	marblesMoved := 0
 	tmp := marbleNil
 	var x, y int = move.X, move.Y
 	for ; gs.isInBounds(x, y); x, y = x+move.dx(), y+move.dy() {
-		board[y][x], tmp = tmp, board[y][x]
+		nextSnapshot.board[y][x], tmp = tmp, nextSnapshot.board[y][x]
 		if tmp == marbleNil {
 			break
 		}
-		marblesMoved++
+		nextSnapshot.lastMove.MarblesMoved++
 	}
 	// A red marble was pushed off the board
 	if !gs.isInBounds(x, y) && tmp == marbleRed {
@@ -269,7 +276,8 @@ func (gs *gameState) ExecuteMove(move Move) error {
 		x -= move.dx()
 		y -= move.dy()
 	}
-	if board[y][x] == gs.lastSnapshot().whoseTurn.otherAgent().marble() {
+  otherAgentMarble := gs.lastSnapshot().whoseTurn.otherAgent().marble()
+	if nextSnapshot.board[y][x] == otherAgentMarble {
 		gs.ko = &Move{
 			X: x,
 			Y: y,
@@ -289,17 +297,7 @@ func (gs *gameState) ExecuteMove(move Move) error {
 		panic("End player turn failed!")
 	}
 
-	gs.history = append(gs.history, snapshot{
-		board:     board,
-		whoseTurn: gs.lastSnapshot().whoseTurn.otherAgent(),
-		lastMove: &MoveWMarblesMoved{
-			X:            move.X,
-			Y:            move.Y,
-			D:            move.D,
-			MarblesMoved: marblesMoved,
-		},
-	})
-
+	gs.history = append(gs.history, nextSnapshot)
 	gs.posToCount[gs.getPositionString()]++
 
 	gs.updateStatus()

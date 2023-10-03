@@ -109,4 +109,20 @@ document.getElementById('rematch-button').addEventListener('click', () => {
       });
 });
 
+document.getElementById('move-history-prev').addEventListener('click', () => {
+  historyManager.prev();
+});
+
+document.getElementById('move-history-next').addEventListener('click', () => {
+  historyManager.next();
+});
+
+document.getElementById('move-history-first').addEventListener('click', () => {
+  historyManager.first();
+});
+
+document.getElementById('move-history-last').addEventListener('click', () => {
+  historyManager.last();
+});
+
 getStateAndUpdate();

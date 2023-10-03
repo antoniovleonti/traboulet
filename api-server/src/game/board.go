@@ -44,6 +44,17 @@ func marbleFromString(s string) (Marble, bool) {
 
 type BoardT [][]Marble
 
+func (b BoardT) deepCopy() BoardT {
+  newBoard := make([][]Marble, len(b))
+  for i := 0; i < len(b); i++ {
+    newBoard[i] = make([]Marble, len(b[i]))
+    for j := 0; j < len(b[i]); j++ {
+      newBoard[i][j] = b[i][j]
+    }
+  }
+  return newBoard
+}
+
 func (b BoardT) MarshalJSON() ([]byte, error) {
 	s := make([][]string, len(b))
 	for i := 0; i < len(b); i++ {
