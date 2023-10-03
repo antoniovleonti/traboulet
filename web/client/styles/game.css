@@ -30,6 +30,7 @@
 
 #board-content {
   padding: 10px;
+  touch-action: manipulation;
 }
 }
 #board-graphical {
@@ -176,6 +177,7 @@
 #move-history-controls {
   display: flex;
   justify-content: center;
+  touch-action: manipulation;
 }
 #move-history-first {
   border-top-right-radius: 0;
