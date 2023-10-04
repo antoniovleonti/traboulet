@@ -30,7 +30,6 @@
 
 #board-content {
   padding: 10px;
-  touch-action: manipulation;
 }
 }
 #board-graphical {
@@ -171,6 +170,8 @@
 .move-history--last-move {
   background-color: lightgrey;
   padding: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
   border-radius: 10px;
 }
 

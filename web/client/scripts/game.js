@@ -28,10 +28,8 @@ const playerDisplayManager = new PlayerDisplayManager(
     document.getElementById('rematch-button'),
     document.getElementById('rematch-offer-count'));
 
-const moveListDisplay =
-    new MoveHistoryDisplay(document.getElementById('move-history'));
-
-const historyManager = new HistoryManager(boardDisplay, moveListDisplay);
+const historyManager =
+    new HistoryManager(boardDisplay, document.getElementById('move-history'));
 
 function getURLBase() {
   let urlParts = window.location.href.split("/");

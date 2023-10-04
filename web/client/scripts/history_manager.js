@@ -2,7 +2,7 @@
 
 class HistoryManager {
   boardDisplay_;
-  moveListDisplay_;
+  moveOl_;
 
   currentSnapshotIdx_;
   history_;
@@ -10,9 +10,9 @@ class HistoryManager {
   myID_;
   isYourTurn_;
 
-  constructor(boardDisplay, moveListDisplay) {
+  constructor(boardDisplay, moveOl) {
     this.boardDisplay_ = boardDisplay;
-    this.moveListDisplay_ = moveListDisplay;
+    this.moveOl_ = moveOl;
 
     this.currentSnapshotIdx_ = 0;
     this.history_ = null;
@@ -20,6 +20,12 @@ class HistoryManager {
 
     this.myID_ = getMyID();
     this.isYourTurn_ = false;
+  }
+
+  clearMoveOl() {
+    while (this.moveOl_.lastChild) {
+      this.moveOl_.removeChild(this.moveOl_.lastChild);
+    }
   }
 
   update(history, validMoves, idToPlayer) {
@@ -36,6 +42,39 @@ class HistoryManager {
     this.last();
   }
 
+  updateMoveOl(history) {
+    this.clearMoveOl();
+
+    let selectedAnchor;
+    for (let i = 0; i < history.length; i++) {
+      const move = history[i].lastMove;
+      const li = document.createElement("li");
+      const a = document.createElement('a');
+
+      if (move == null) {
+        a.appendChild(document.createTextNode('start'));
+      } else {
+        a.appendChild(document.createTextNode(
+            "" + "ABCDEFG"[move.x] + (7 - move.y) + " " + move.d));
+      }
+
+      if (i == this.currentSnapshotIdx_) {
+        selectedAnchor = a;
+      } else {
+        const this_ = this;
+        a.addEventListener('click', (e) => {
+          this_.at(i);
+        });
+      }
+
+      li.appendChild(a);
+      this.moveOl_.appendChild(li);
+    }
+
+    selectedAnchor.classList.add('move-history--last-move');
+    selectedAnchor.scrollIntoView({ inline: 'center', block: 'center' });
+  }
+
   render() {
     const canMove = this.isYourTurn_ &&
                     (this.currentSnapshotIdx_ == this.history_.length-1);
@@ -44,7 +83,7 @@ class HistoryManager {
     this.boardDisplay_.update(this.history_[this.currentSnapshotIdx_].board,
                               this.validMoves_, canMove);
 
-    this.moveListDisplay_.update(this.history_, this.currentSnapshotIdx_);
+    this.updateMoveOl(this.history_, this.currentSnapshotIdx_);
   }
 
   next() {
@@ -65,6 +104,12 @@ class HistoryManager {
 
   last() {
     this.currentSnapshotIdx_ = this.history_.length - 1;
+    this.render();
+  }
+
+  at(idx) {
+    this.currentSnapshotIdx_ =
+        Math.max(Math.min(idx, this.history_.length - 1), 0);
     this.render();
   }
 }
