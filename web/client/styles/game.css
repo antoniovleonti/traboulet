@@ -27,16 +27,18 @@
 
 #board-section {
   position: relative;
+}
 
 #board-content {
+  display: flex;
+  justify-content: center;
   padding: 10px;
-}
 }
 #board-graphical {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: min(100%, 500px);
+  width: min(100%, 50vh);
   border-radius: 10%;
   position: relative;
   border: 1px solid;
@@ -209,7 +211,7 @@
 
 #game-dash {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 40% 1fr;
 }
 
 }
