@@ -3,26 +3,18 @@
 }
 
 .player-card {
-  border: 1px solid;
-  padding: 10px;
   --player-card-margin: 0.5em;
-  margin-top: var(--player-card-margin);
   margin-bottom: var(--player-card-margin);
   width: 100%;
+  border-radius: 10px;
 }
 
 .player-clock {
   background-color: lightgrey;
-  padding: .2em;
 }
 
 .player-clock-active {
   background-color: lime;
-}
-
-#status {
-  background-color: lightgrey;
-  padding: 0.2em;
 }
 
 #board-section {
@@ -32,7 +24,8 @@
 #board-content {
   display: flex;
   justify-content: center;
-  padding: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 #board-graphical {
   display: flex;
@@ -41,7 +34,6 @@
   width: min(100%, 50vh);
   border-radius: 10%;
   position: relative;
-  border: 1px solid;
 }
 /* this is to make the board a responsive square
    https://spin.atomicobject.com/2015/07/14/css-responsive-square/ */
@@ -153,10 +145,6 @@
 }
 
 #move-history-wrapper {
-  --move-history-wrapper-padding-tb: 10px;
-  padding-top: var(--move-history-wrapper-padding-tb);
-  padding-bottom: var(--move-history-wrapper-padding-tb);
-  border: 1px solid;
   white-space: nowrap;
   overflow-x: scroll;
 }
@@ -169,17 +157,11 @@
 #move-history li:last-child::after {
   content: "";
 }
-.move-history--last-move {
-  background-color: lightgrey;
-  padding: 5px;
-  padding-left: 10px;
-  padding-right: 10px;
-  border-radius: 10px;
-}
 
 #move-history-controls {
   display: flex;
   justify-content: center;
+  z-index: 10;
   touch-action: manipulation;
 }
 #move-history-first {

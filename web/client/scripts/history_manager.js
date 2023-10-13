@@ -71,7 +71,10 @@ class HistoryManager {
       this.moveOl_.appendChild(li);
     }
 
-    selectedAnchor.classList.add('move-history--last-move');
+    selectedAnchor.classList.add('bordered');
+    selectedAnchor.classList.add('rounded');
+    selectedAnchor.classList.add('padded-sm');
+    selectedAnchor.classList.add('highlighted');
     selectedAnchor.scrollIntoView({ inline: 'center', block: 'center' });
   }
 

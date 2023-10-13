@@ -11,6 +11,7 @@ h1 {
 }
 
 h2, h3, h5, h6 {
+  margin-bottom: 1em;
   margin-top: 1em;
   font-style: italic;
   color: grey;
@@ -38,6 +39,7 @@ button {
   padding-top: var(--button-padding-tb);
   padding-bottom: var(--button-padding-tb);
   border-radius: 10px;
+  box-shadow: 0 0 5px lightgrey;
 }
 button:hover {
   background-color: whitesmoke;
@@ -58,4 +60,27 @@ th {
 
 input {
   border: 1px solid;
+}
+
+.raised {
+  box-shadow: 0 0 5px lightgrey;
+}
+
+.rounded {
+  border-radius: 10px;
+}
+
+.bordered {
+  border: 1px solid currentcolor;
+}
+
+.padded {
+  padding: 10px;
+}
+.padded-sm {
+  padding: 5px;
+}
+
+.highlighted {
+  background-color: lightgrey;
 }

@@ -5,6 +5,7 @@
 
 <link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>
 <link rel="stylesheet" type="text/css" href="https://unpkg.com/tailwindcss@%5E3/src/css/preflight.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 <link rel="stylesheet" type="text/css" href="/styles/base.css">
 <link rel="stylesheet" type="text/css" href="/styles/game.css">
 
@@ -24,11 +25,11 @@ Game doesn't exist or the server is down.
 
 <div>
 <h2>Moves</h2>
-<div id=move-history-wrapper>
+<div id=move-history-wrapper class="raised rounded padded bordered">
   <ol id=move-history><li>NO DATA</li></ol>
 </div>
-<div id=move-history-controls>
-<button id=move-history-first>&lt;&lt;</button><!-- ugly trick to remove spaces
+<div id=move-history-controls >
+<button id=move-history-first >&lt;&lt;</button><!-- ugly trick to remove spaces
 --><button id=move-history-prev>&lt;</button><!--
 --><button id=move-history-next>&gt;</button><!--
 --><button id=move-history-last>&gt;&gt;</button>
@@ -39,15 +40,17 @@ Game doesn't exist or the server is down.
 
 <div>
 <h2>Info</h2>
+<div class="raised rounded bordered padded">
 Status:
-<span id=status>NOT FOUND</span><br>
+<span id=status class="rounded bordered padded-sm highlighted">NOT FOUND</span><br>
+</div>
 </div>
 
 <div id=board-section>
 <h2>Board</h2>
 
 <div id=board-content>
-<div id=board-graphical>
+<div id=board-graphical class="raised bordered">
   <div id=board-inner-padding>
   <div id=board-inner>
     <div class="board--marble-spaced">
@@ -106,20 +109,20 @@ Status:
 
 <div>
   <h2>Players</h2>
-  <div class="player-card">
+  <div class="player-card raised rounded padded bordered">
     <span id=villain-color>*****</span><br>
     Score: <span id=villain-score>-</span><br>
-    Time:
-    <span id=villain-clock class="player-clock">00:00</span>
-    <span id=villain-activity hidden>***</span><br>
+    Time: <span id=villain-clock
+           class="player-clock bordered padded-sm rounded">00:00</span>
+    <span id=villain-activity class="material-symbols-outlined" hidden>timer</span>
   </div>
 
-  <div class="player-card">
+  <div class="player-card raised rounded padded bordered">
     <span id=hero-color>*****</span>
     <span id=you-indicator hidden>(you)</span><br>
     Score: <span id=hero-score>-</span><br>
-    Time: <span id=hero-clock class="player-clock">00:00</span>
-    <span id=hero-activity hidden>***</span><br>
+    Time: <span id=hero-clock class="player-clock bordered padded-sm rounded">00:00</span>
+    <span id=hero-activity class="material-symbols-outlined" hidden>timer</span>
   </div>
   <button id=resign-button>Resign</button>
   <button id=rematch-button hidden>

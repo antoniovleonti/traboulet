@@ -11,7 +11,9 @@ class ClockDisplay {
   reset() {
     clearInterval(this.interval_);
     ClockDisplay.clear(this.clock_);
-    this.clock_.classList = "player-clock";
+    this.clock_.classList.remove("player-clock-active");
+    this.clock_.classList.remove("player-clock");
+    this.clock_.classList.add("player-clock");
   }
 
   static clear(clock) {
