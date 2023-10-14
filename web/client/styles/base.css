@@ -46,11 +46,20 @@ button:hover {
 }
 
 table {
-  border: 1px solid;
+  border-collapse: separate !important;
+  border-spacing: 0;
+  overflow: hidden;
 }
 th, td {
   padding: 0.4em;
-  border: 1px solid;
+  border-left: 1px solid;
+  border-top: 1px solid;
+}
+td:first-child, th:first-child {
+  border-left: none;
+}
+th{
+  border-top: none;
 }
 
 th {
