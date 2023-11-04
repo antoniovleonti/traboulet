@@ -31,24 +31,8 @@ const playerDisplayManager = new PlayerDisplayManager(
 const historyManager =
     new HistoryManager(boardDisplay, document.getElementById('move-history'));
 
-function getURLBase() {
-  let urlParts = window.location.href.split("/");
-  let gameID = urlParts[urlParts.length-1];
-  return '/api/games/' + gameID;
-}
-
-const stream = new EventSource(getURLBase() + "/event-stream", {
-  withCredentials: true,
-});
-stream.addEventListener('state-push', function(e) {
-  update(JSON.parse(e.data));
-});
-stream.onerror = function(e) {
-  console.log(e);
-};
-
 function getStateAndUpdate() {
-  fetch(getURLBase() + '/state')
+  fetch(getAPIBase() + '/state')
       .then(response => {
         if (response.ok) {
           return response.json();
@@ -84,7 +68,7 @@ function update(state) {
 }
 
 document.getElementById('resign-button').addEventListener('click', () => {
-  fetch(getURLBase() + '/resignation',
+  fetch(getAPIBase() + '/resignation',
         { method: 'POST', body: null })
       .then(response => {
         if (!response.ok) {
@@ -96,7 +80,7 @@ document.getElementById('resign-button').addEventListener('click', () => {
 });
 
 document.getElementById('rematch-button').addEventListener('click', () => {
-  fetch(getURLBase() + '/rematch-offer',
+  fetch(getAPIBase() + '/rematch-offer',
         { method: 'POST', body: null })
       .then(response => {
         if (!response.ok) {
@@ -122,5 +106,18 @@ document.getElementById('move-history-first').addEventListener('click', () => {
 document.getElementById('move-history-last').addEventListener('click', () => {
   historyManager.last();
 });
+
+// Listen for updates.
+const eventSource =
+    new EventSource(getAPIBase() + "/event-source", { withCredentials: true, });
+
+eventSource.addEventListener('state-push', function(e) {
+  update(JSON.parse(e.data));
+});
+
+eventSource.onerror = function(e) {
+  console.log(e);
+};
+
 
 getStateAndUpdate();

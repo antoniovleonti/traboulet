@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+  "evtpub"
 )
 
 type rootRouter struct {
@@ -14,15 +15,27 @@ type rootRouter struct {
 	challengeRtr *challengeRouter
 	gameRtr      *gameRouter
 	nameGen      *nonCryptoStringGen
+  evPub     evtpub.EventPublisher
 }
 
-func NewRootRouter() *rootRouter {
+func NewRootRouter(evPub evtpub.EventPublisher) *rootRouter {
+  gameRtrURLBase, err := url.Parse("/games/")
+  if err != nil {
+    panic(err)
+  }
 	rr := rootRouter{
 		router:  httprouter.New(),
-		gameRtr: newGameRouter("/games/"),
 		nameGen: newNonCryptoStringGen(),
+    evPub:   evPub,
+		gameRtr: newGameRouter(gameRtrURLBase, evPub),
 	}
-	rr.challengeRtr = newChallengeRouter("/challenges/", rr.gameRtr.addGame)
+
+  challengeRtrURLBase, err := url.Parse("/challenges/")
+  if err != nil {
+    panic(err)
+  }
+  rr.challengeRtr =
+    newChallengeRouter(challengeRtrURLBase, rr.gameRtr.addGame, evPub)
 
 	rr.router.GET("/games", rr.fwdToGameRouter)
 	rr.router.POST("/games", rr.fwdToGameRouter)

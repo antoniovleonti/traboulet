@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+  "evtpub"
+  "net/url"
 )
 
 // Assumption is that this is a function which will create a new game with
@@ -14,18 +16,18 @@ import (
 // refresh or whatever-- details of what is communicated to the client is kind
 // of none of this file's business), and probably dispose of this handler.
 type challengeAcceptedCb func(
-	*challengeHandler, game.Config, *http.Cookie, *http.Cookie) (string, error)
+	*challengeHandler, game.Config, *http.Cookie, *http.Cookie) (*url.URL, error)
 
 type challengeHandler struct {
 	router              *httprouter.Router
 	creator             *http.Cookie
 	timestamp           time.Time
 	config              game.Config
-	pub                 publisher
 	onChallengeAccepted challengeAcceptedCb
 	mutex               sync.RWMutex
 	accepted            bool
-	gamePath            *string
+	gamePath            *url.URL
+  channelPub          *evtpub.ChannelPublisher
 }
 
 type challengeHandlerView struct {
@@ -34,8 +36,13 @@ type challengeHandlerView struct {
 }
 
 func newChallengeHandler(
-	c *http.Cookie, config game.Config,
-	onChallengeAccepted challengeAcceptedCb) (*challengeHandler, error) {
+	c *http.Cookie,
+  config game.Config,
+	onChallengeAccepted challengeAcceptedCb,
+  channelPub *evtpub.ChannelPublisher,
+)(
+  *challengeHandler, error,
+){
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
@@ -44,13 +51,12 @@ func newChallengeHandler(
 		timestamp:           time.Now(),
 		creator:             c,
 		config:              config,
-		pub:                 publisher{},
 		onChallengeAccepted: onChallengeAccepted,
 		accepted:            false,
+    channelPub:            channelPub,
 	}
 
 	ch.router.GET("/", ch.getChallenge)
-	ch.router.GET("/update", ch.getUpdate)
 	ch.router.POST("/accept", ch.postAccept)
 
 	return &ch, nil
@@ -64,7 +70,7 @@ func (ch *challengeHandler) redirectToGameOrRoute(
 	w http.ResponseWriter, r *http.Request) {
 	ch.mutex.RLock()
 	if ch.accepted && ch.gamePath != nil {
-		w.Header().Add("Location", *ch.gamePath)
+		w.Header().Add("Location", ch.gamePath.String())
 		w.WriteHeader(http.StatusSeeOther)
 		w.Write([]byte(
 			"Game has started; check header Location field for game path."))
@@ -88,11 +94,6 @@ func (ch *challengeHandler) getChallenge(
 		return
 	}
 	w.Write(b)
-}
-
-func (ch *challengeHandler) getUpdate(
-	w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	ch.pub.subscribe(w, r.Context().Done())
 }
 
 func (ch *challengeHandler) postAccept(
@@ -131,19 +132,14 @@ func (ch *challengeHandler) postAccept(
 		return
 	}
 	ch.accepted = true
-	ch.gamePath = &gamePath
+	ch.gamePath = gamePath
 
-	w.Header().Add("Location", gamePath)
+  // Respond to this request.
+	w.Header().Add("Location", gamePath.String())
 	w.WriteHeader(http.StatusSeeOther)
 	w.Write([]byte("Success; check header Location field for game path."))
 
-	// Notify subscribers of new game
-	ch.pub.do(func(w http.ResponseWriter) {
-		w.Header().Add("Location", gamePath)
-		w.WriteHeader(http.StatusSeeOther)
-		w.Write([]byte(
-			"Game has started; check header Location field for game path."))
-	}, true)
+  err = ch.channelPub.Push("game-created", gamePath.String())
 }
 
 func (ch *challengeHandler) MarshalJSON() ([]byte, error) {
@@ -151,4 +147,8 @@ func (ch *challengeHandler) MarshalJSON() ([]byte, error) {
 		Config:    ch.config,
 		CreatorID: ch.creator.Name,
 	})
+}
+
+func (ch *challengeHandler) TearDown() {
+  ch.channelPub.Delete()
 }

@@ -10,19 +10,20 @@ import (
 	"strings"
 	"testing"
 	"time"
+  "evtpub"
 )
 
 func TestNewMatchmaker(t *testing.T) {
 	var _ http.Handler = (*rootRouter)(nil)
 
-	rtr := NewRootRouter()
+	rtr := NewRootRouter(evtpub.NewMockEventPublisher())
 	if rtr == nil {
 		t.Error("rootRouter was nil")
 	}
 }
 
 func TestServeHTTPSetsCookie(t *testing.T) {
-	rtr := NewRootRouter()
+	rtr := NewRootRouter(evtpub.NewMockEventPublisher())
 
 	req, err := http.NewRequest("GET", "/foo/bar", nil)
 	if err != nil {
@@ -38,7 +39,7 @@ func TestServeHTTPSetsCookie(t *testing.T) {
 
 // test fwdToChallengeRouter
 func TestGetChallengesMapFromRoot(t *testing.T) {
-	rtr := NewRootRouter()
+	rtr := NewRootRouter(evtpub.NewMockEventPublisher())
 
 	// test both with and without trailing slash
 	for _, path := range []string{"/challenges", "/challenges/"} {
@@ -113,7 +114,7 @@ func addAcceptedGame(rtr *rootRouter, t *testing.T) string {
 
 // Test full user journey from challenge to playing moves in a game.
 func TestFlowFromChallengeToPlay(t *testing.T) {
-	rtr := NewRootRouter()
+	rtr := NewRootRouter(evtpub.NewMockEventPublisher())
 
   gamePath := addAcceptedGame(rtr, t)
 
@@ -159,7 +160,7 @@ func TestFlowFromChallengeToPlay(t *testing.T) {
 }
 
 func TestDeleteOldChallengesAndDeleteChallengeCbRace(t *testing.T) {
-	rtr := NewRootRouter()
+	rtr := NewRootRouter(evtpub.NewMockEventPublisher())
   path := addAcceptedGame(rtr, t)
 	gameID := strings.Split(path, "/")[2]
 

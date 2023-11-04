@@ -8,19 +8,27 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+  "evtpub"
+  "net/url"
 )
+
 
 func TestNewChallengeRouter(t *testing.T) {
 	var _ http.Handler = (*challengeRouter)(nil)
 
-	cr := newChallengeRouter("/", nil)
+  evpub := evtpub.NewMockEventPublisher()
+  urlBase, _ := url.Parse("/")
+
+	cr := newChallengeRouter(urlBase, nil, evpub)
 	if cr == nil {
 		t.Error("matchmaker was nil")
 	}
 }
 
 func TestPostChallenge(t *testing.T) {
-	cr := newChallengeRouter("/", nil)
+  evpub := evtpub.NewMockEventPublisher()
+  urlBase, _ := url.Parse("/")
+	cr := newChallengeRouter(urlBase, nil, evpub)
 
 	rr, err := post10MinChallenge(cr)
   if err != nil {
@@ -44,10 +52,13 @@ func TestPostChallenge(t *testing.T) {
 }
 
 func TestHandleChallengeRequestForwarding(t *testing.T) {
-	cr := newChallengeRouter("/", nil)
+  evpub, chpub := GetTestPublishers()
+  urlBase, _ := url.Parse("/")
+  cr := newChallengeRouter(urlBase, nil, evpub)
 
-	challenge, err :=
-		newChallengeHandler(fakeWhiteCookie(), game.Config{time.Minute}, nil)
+
+	challenge, err := newChallengeHandler(
+    fakeWhiteCookie(), game.Config{time.Minute}, nil, chpub)
 	if err != nil {
 		t.Error(err)
 	}
@@ -70,7 +81,9 @@ func TestHandleChallengeRequestForwarding(t *testing.T) {
 }
 
 func TestGetChallenges(t *testing.T) {
-	cr := newChallengeRouter("/", nil)
+  evpub, chpub := GetTestPublishers()
+  urlBase, _ := url.Parse("/")
+  cr := newChallengeRouter(urlBase, nil, evpub)
 
 	type challengeParams struct {
 		s      string
@@ -97,7 +110,8 @@ func TestGetChallenges(t *testing.T) {
 	}
 
 	for _, params := range paramsList {
-		challenge, err := newChallengeHandler(params.cookie, params.config, nil)
+		challenge, err := newChallengeHandler(
+      params.cookie, params.config, nil, chpub)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -146,7 +160,9 @@ func TestGetChallenges(t *testing.T) {
 
 // Really for safety against crashing due to dereferencing nil map entries etc
 func TestJoinNonExistentID(t *testing.T) {
-	cr := newChallengeRouter("/", nil)
+	evpub := evtpub.NewMockEventPublisher()
+  urlBase, _ := url.Parse("/")
+  cr := newChallengeRouter(urlBase, nil, evpub)
 
 	// This should trigger the above callback
 	req, err := http.NewRequest("POST", "/nonexistent/join", nil)
@@ -165,7 +181,9 @@ func TestJoinNonExistentID(t *testing.T) {
 }
 
 func TestPostChallengeInvalidConfig(t *testing.T) {
-	cr := newChallengeRouter("/", nil)
+	evpub := evtpub.NewMockEventPublisher()
+  urlBase, _ := url.Parse("/")
+  cr := newChallengeRouter(urlBase, nil, evpub)
 
 	// create body
 	config := game.Config{}
@@ -189,18 +207,27 @@ func TestPostChallengeInvalidConfig(t *testing.T) {
 }
 
 func TestDeleteOldChallenges(t *testing.T) {
-	cr := newChallengeRouter("/", nil)
+	evpub := evtpub.NewMockEventPublisher()
+  urlBase, _ := url.Parse("/")
+  cr := newChallengeRouter(urlBase, nil, evpub)
+
+  chpub1, _ := evpub.NewChannelPublisher("testpath1")
 	cr.challenges["too old"] = &challengeHandler{
 		timestamp: time.Now().Add(-1 * time.Hour),
 		accepted:  false,
+    channelPub: chpub1,
 	}
+  chpub2, _ := evpub.NewChannelPublisher("testpath2")
 	cr.challenges["accepted"] = &challengeHandler{
 		timestamp: time.Now().Add(-1 * time.Hour),
 		accepted:  true,
+    channelPub: chpub2,
 	}
+  chpub3, _ := evpub.NewChannelPublisher("testpath3")
 	cr.challenges["not too old"] = &challengeHandler{
 		timestamp: time.Now().Add(-1 * time.Minute),
 		accepted:  false,
+    channelPub: chpub3,
 	}
 
 	cr.deleteOldChallenges(10 * time.Minute)
@@ -240,7 +267,9 @@ func post10MinChallenge(
 }
 
 func TestChallengeCountLimit(t *testing.T) {
-	cr := newChallengeRouter("/", nil)
+	evpub := evtpub.NewMockEventPublisher()
+  urlBase, _ := url.Parse("/")
+  cr := newChallengeRouter(urlBase, nil, evpub)
 
 	for i := 0; i < 100; i++ {
     rr, err := post10MinChallenge(cr)

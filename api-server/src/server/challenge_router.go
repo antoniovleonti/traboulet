@@ -10,33 +10,32 @@ import (
 	"net/url"
 	"sync"
 	"time"
+  "evtpub"
 )
 
 type deleteChallengeFn func()
-
-type createGameFnT func(
-	deleteChallengeFn, game.Config, *http.Cookie, *http.Cookie) (string, error)
 
 type challengeRouter struct {
 	router     *httprouter.Router
 	challenges map[string]*challengeHandler
 	pathGen    *nonCryptoStringGen
 	createGame createGameFnT
-	prefix     string
+	urlBase    *url.URL
 	mutex      sync.RWMutex
+  eventPub   evtpub.EventPublisher
 }
 
 func newChallengeRouter(
-	prefix string, createGame createGameFnT) *challengeRouter {
-	if prefix[0] != '/' || prefix[len(prefix)-1] != '/' {
-		panic("expect prefix to begin and end with '/'")
-	}
+	urlBase *url.URL, createGame createGameFnT, eventPub evtpub.EventPublisher) (
+  *challengeRouter){
+
 	cr := challengeRouter{
 		router:     httprouter.New(),
 		challenges: make(map[string]*challengeHandler),
 		pathGen:    newNonCryptoStringGen(),
 		createGame: createGame,
-		prefix:     prefix,
+		urlBase:    urlBase,
+    eventPub:   eventPub,
 	}
 
 	cr.router.GET("/", cr.getChallenges)
@@ -112,24 +111,33 @@ func (cr *challengeRouter) postChallenge(
 	}
 
 	// create challenge
-	path := cr.pathGen.newString(8)
+	id := cr.pathGen.newString(8)
 	bind := func(
-		ch *challengeHandler, c game.Config, c1, c2 *http.Cookie) (string, error) {
+		ch *challengeHandler, config game.Config, cookie1, cookie2 *http.Cookie) (
+    *url.URL, error) {
 
-		return cr.onChallengeAccepted(ch, path, c, c1, c2)
+		return cr.onChallengeAccepted(ch, id, config, cookie1, cookie2)
 	}
-	challenge, err := newChallengeHandler(cookie, config, bind)
+
+  fullPath := cr.urlBase.JoinPath(id)
+  chanPub, err := cr.eventPub.NewChannelPublisher(fullPath.String())
+  if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+    return
+  }
+	challenge, err := newChallengeHandler(cookie, config, bind, chanPub)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	cr.challenges[path] = challenge
+	cr.challenges[id] = challenge
 
-	log.Print("Created challenge " + path + ".")
+	log.Print("Created challenge " + id + ".")
 
-	w.Header().Add("Location", cr.prefix+path)
+	w.Header().Add("Location", fullPath.String())
 	w.WriteHeader(http.StatusSeeOther)
-	w.Write([]byte("success"))
+	w.Write([]byte("Success."))
 }
 
 func (cr *challengeRouter) getChallenges(
@@ -155,27 +163,37 @@ func (cr *challengeRouter) getChallenges(
 // Not thread safe-- MUST be synchronized by challenge handler
 func (cr *challengeRouter) onChallengeAccepted(
 	ch *challengeHandler, id string, config game.Config, cookie1,
-	cookie2 *http.Cookie) (string, error) {
+	cookie2 *http.Cookie) (*url.URL, error) {
   cr.mutex.RLock()
   defer cr.mutex.RUnlock()
 
 	if _, ok := cr.challenges[id]; !ok {
 		// ???? challenge doesn't exist!
-		return "", errors.New("Challenge " + id + " (unexpectedly) does not exist.")
+		return nil, errors.New(
+      "Challenge " + id + " (unexpectedly) does not exist.")
 	}
 
 	if cr.createGame == nil {
-		return "", errors.New(
+		return nil, errors.New(
 			"Game could be created, but no callback to do so was provided.")
 	}
 
 	deleteCb := func() {
     cr.mutex.Lock()
     defer cr.mutex.Unlock()
-		delete(cr.challenges, id)
+		cr.deleteChallenge(id)
 	}
 
 	return cr.createGame(deleteCb, config, cookie1, cookie2)
+}
+
+func (cr *challengeRouter) deleteChallenge(id string) {
+  challenge, ok := cr.challenges[id]
+  if !ok {
+    panic("trying to delete nonexistent challenge")
+  }
+  challenge.TearDown()
+  delete(cr.challenges, id)
 }
 
 func (cr *challengeRouter) PeriodicallyDeleteOldChallenges(d time.Duration) {
@@ -192,9 +210,9 @@ func (cr *challengeRouter) deleteOldChallenges(d time.Duration) {
 	defer cr.mutex.Unlock()
 
 	count := 0
-	for k, challenge := range cr.challenges {
+	for id, challenge := range cr.challenges {
 		if !challenge.accepted && time.Since(challenge.timestamp) > d {
-			delete(cr.challenges, k)
+      cr.deleteChallenge(id)
 			count++
 		}
 	}

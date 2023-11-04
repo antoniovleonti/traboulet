@@ -6,19 +6,23 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+  "net/url"
+  "evtpub"
 )
 
 func TestNewGameRouter(t *testing.T) {
 	var _ http.Handler = (*gameRouter)(nil)
 
-	gr := newGameRouter("/")
+  urlBase, _ := url.Parse("/")
+	gr := newGameRouter(urlBase, evtpub.NewMockEventPublisher())
 	if gr == nil {
 		t.Error("gameRouter was nil")
 	}
 }
 
 func TestAddGame(t *testing.T) {
-	gr := newGameRouter("/")
+  urlBase, _ := url.Parse("/")
+	gr := newGameRouter(urlBase, evtpub.NewMockEventPublisher())
 
 	_, err := gr.addGame(
 		func() {}, game.Config{TimeControl: 1 * time.Minute},
@@ -33,11 +37,13 @@ func TestAddGame(t *testing.T) {
 }
 
 func makeRouterWithTestGame() (*gameRouter, error) {
-	gr := newGameRouter("/")
+  urlBase, _ := url.Parse("/")
+  evpub, chpub := GetTestPublishers()
+	gr := newGameRouter(urlBase, evpub)
 
 	game, err := newGameHandler(
-		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
-		fakeBlackCookie())
+		func() {}, *chpub, game.Config{TimeControl: 1 * time.Minute},
+    fakeWhiteCookie(), fakeBlackCookie())
 	if err != nil {
 		return nil, err
 	}
@@ -63,17 +69,26 @@ func TestHandleGameRequestForwarding(t *testing.T) {
 }
 
 func TestDeleteGamesOlderThan(t *testing.T) {
-	gr := newGameRouter("/")
+  evpub := evtpub.NewMockEventPublisher()
+  urlBase, _ := url.Parse("/")
+	gr := newGameRouter(urlBase, evpub)
+
 	tTooOld := time.Now().Add(-1 * time.Hour)
+  chpubTooOld, _ := evpub.NewChannelPublisher("too/old")
 	gr.games["too old"] = &gameHandler{
 		completionTime: &tTooOld,
+    channelPub: *chpubTooOld,
 	}
 	tNotTooOld := time.Now().Add(-1 * time.Minute)
+  chpubNotTooOld, _ := evpub.NewChannelPublisher("not/too/old")
 	gr.games["not too old"] = &gameHandler{
 		completionTime: &tNotTooOld,
+    channelPub: *chpubNotTooOld,
 	}
+  chpubIncomplete, _ := evpub.NewChannelPublisher("incomplete")
 	gr.games["incomplete"] = &gameHandler{
 		completionTime: nil,
+    channelPub: *chpubIncomplete,
 	}
 
 	gr.deleteGamesOlderThan(10 * time.Minute)
@@ -115,7 +130,8 @@ func TestLongLivedRequestDoesntBlockMutex(t *testing.T) {
 }
 
 func TestGameNumberLimit(t *testing.T) {
-	gr := newGameRouter("/")
+  urlBase, _ := url.Parse("/")
+	gr := newGameRouter(urlBase, evtpub.NewMockEventPublisher())
 
   for i := 0; i < 100; i++ {
     _, err := gr.addGame(
@@ -132,7 +148,7 @@ func TestGameNumberLimit(t *testing.T) {
   if err == nil {
     t.Error("expected 101st game add to fail")
   }
-  if empty != "" {
+  if empty != nil {
     t.Error("expected 101st game to be nil")
   }
 

@@ -1,9 +1,7 @@
 version: '3'
 services:
-  web:
-    build: ./web
-    links:
-      - "api-server"
+  web-proxy:
+    build: ./web-proxy
     ports:
      - "80:80"
   api-server:

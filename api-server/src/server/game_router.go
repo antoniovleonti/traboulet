@@ -4,31 +4,34 @@ import (
 	"game"
 	"github.com/julienschmidt/httprouter"
 	"log"
-  "errors"
-	mrand "math/rand"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
+	mrand "math/rand"
+  "errors"
+  "evtpub"
 )
+
+type createGameFnT func(
+	deleteChallengeFn, game.Config, *http.Cookie, *http.Cookie) (*url.URL, error)
 
 type gameRouter struct {
 	router     *httprouter.Router
 	games      map[string]*gameHandler
 	pathGen    *nonCryptoStringGen
-	prefix     string
+	urlBase    *url.URL
 	mutex      sync.RWMutex
+  evpub      evtpub.EventPublisher
 }
 
-func newGameRouter(prefix string) *gameRouter {
-	if prefix[0] != '/' || prefix[len(prefix)-1] != '/' {
-		panic("expect prefix to begin and end with '/'")
-	}
+func newGameRouter(urlBase *url.URL, evpub evtpub.EventPublisher) *gameRouter {
 	gr := gameRouter{
 		router:  httprouter.New(),
 		games:   make(map[string]*gameHandler),
 		pathGen: newNonCryptoStringGen(),
-		prefix:  prefix,
+		urlBase:  urlBase,
+    evpub: evpub,
 	}
 
 	gr.router.GET("/:id", gr.forwardToHandler)
@@ -70,12 +73,13 @@ func (gr *gameRouter) forwardToHandler(
 
 func (gr *gameRouter) addGame(
 	deleteChallengeCb deleteChallengeFn, config game.Config,
-	cookie1, cookie2 *http.Cookie) (string, error) {
+	cookie1, cookie2 *http.Cookie) (*url.URL, error) {
+
 	gr.mutex.Lock()
 	defer gr.mutex.Unlock()
 
 	if len(gr.games) >= 100 {
-		return "", errors.New("Too many games in play; try again later.")
+		return nil, errors.New("Too many games in play; try again later.")
 	}
 
 	// Randomize who plays white
@@ -83,16 +87,22 @@ func (gr *gameRouter) addGame(
 		cookie1, cookie2 = cookie2, cookie1
 	}
 
-	game, err := newGameHandler(deleteChallengeCb, config, cookie1, cookie2)
-	if err != nil {
-		return "", err
-	}
 	id := gr.pathGen.newString(8)
+  fullPath := gr.urlBase.JoinPath(id)
+  chpub, err := gr.evpub.NewChannelPublisher(fullPath.String())
+  if err != nil {
+    return nil, err
+  }
+	game, err :=
+    newGameHandler(deleteChallengeCb, *chpub, config, cookie1, cookie2)
+	if err != nil {
+		return nil, err
+	}
 	gr.games[id] = game
 
 	log.Print("Created game " + id + ".")
 
-	return gr.prefix + id, nil
+	return fullPath, nil
 }
 
 func (gr *gameRouter) PeriodicallyDeleteGamesOlderThan(d time.Duration) {
@@ -124,6 +134,6 @@ func (gr *gameRouter) deleteGamesOlderThan(d time.Duration) {
 }
 
 func (gr *gameRouter) deleteGame(id string) {
-	gr.games[id].DeleteChallenge()
+  gr.games[id].TearDown()
 	delete(gr.games, id)
 }

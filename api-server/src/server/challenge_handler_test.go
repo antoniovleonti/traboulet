@@ -9,19 +9,39 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+  "net/url"
+  "evtpub"
 )
+
+const testChannelPath = "test/path"
+
+func GetTestPublishers() (
+  *evtpub.MockEventPublisher, *evtpub.ChannelPublisher) {
+
+  evpub := evtpub.NewMockEventPublisher()
+  chpub, err := evpub.NewChannelPublisher(testChannelPath)
+
+  if err != nil {
+    panic(err)
+  }
+
+  return evpub, chpub
+}
 
 func TestNewChallengeHandler(t *testing.T) {
 	var _ http.Handler = (*challengeHandler)(nil)
 
 	cb := func(
 		*challengeHandler, game.Config, *http.Cookie, *http.Cookie) (
-		string, error) {
-		return "", nil
+		*url.URL, error) {
+		return nil, nil
 	}
 
-	ch, err :=
-		newChallengeHandler(fakeWhiteCookie(), game.Config{time.Minute}, cb)
+  _, chpub := GetTestPublishers()
+
+	ch, err := newChallengeHandler(
+    fakeWhiteCookie(), game.Config{time.Minute}, cb, chpub)
+
 	if err != nil {
 		t.Error(err)
 	}
@@ -37,7 +57,7 @@ func TestPostJoinValid(t *testing.T) {
 	callbackCalled := false
 	cb := func(
 		ch *challengeHandler, c game.Config, w *http.Cookie, b *http.Cookie) (
-		string, error) {
+		*url.URL, error) {
 		if w.Value != white.Value {
 			t.Error("white cookie did not match expectation")
 		}
@@ -45,10 +65,16 @@ func TestPostJoinValid(t *testing.T) {
 			t.Error("black cookie did not match expectation")
 		}
 		callbackCalled = true
-		return "", nil
+    newGamePath, err := url.Parse("/new/game/path/")
+    if err != nil {
+      t.Fatal(err)
+    }
+		return newGamePath, nil
 	}
 
-	ch, err := newChallengeHandler(white, game.Config{time.Minute}, cb)
+  evpub, chpub := GetTestPublishers()
+
+	ch, err := newChallengeHandler(white, game.Config{time.Minute}, cb, chpub)
 	if err != nil {
 		t.Error(err)
 	}
@@ -63,15 +89,6 @@ func TestPostJoinValid(t *testing.T) {
 	}
 	postJoinReq.AddCookie(black)
 
-	// Add a subscriber to game updates
-	getUpdateReq, err := http.NewRequest("GET", "/update", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	getUpdateResp := httptest.NewRecorder()
-	go ch.ServeHTTP(getUpdateResp, getUpdateReq)
-	time.Sleep(time.Millisecond)
-
 	// Run the request through our handler
 	postJoinResp := httptest.NewRecorder()
 	ch.ServeHTTP(postJoinResp, postJoinReq)
@@ -80,10 +97,14 @@ func TestPostJoinValid(t *testing.T) {
 		t.Error("callback was never called")
 	}
 
-	if getUpdateResp.Code != http.StatusSeeOther {
-		t.Errorf("expected code %d, got %d",
-			http.StatusSeeOther, getUpdateResp.Code)
-	}
+  // Check event publisher
+  if len(evpub.Channels[testChannelPath].Pushes) != 1 {
+    t.Error("expected exactly one update to be pushed")
+  }
+  evt := evpub.Channels[testChannelPath].Pushes[0]
+  if evt.Event != "game-created" {
+    t.Error("expected Event to be 'game-created', got '"+evt.Event+"'.")
+  }
 }
 
 func TestPostJoinNoCookie(t *testing.T) {
@@ -92,12 +113,14 @@ func TestPostJoinNoCookie(t *testing.T) {
 	callbackCalled := false
 	cb := func(
 		*challengeHandler, game.Config, *http.Cookie, *http.Cookie) (
-		string, error) {
+		*url.URL, error) {
 		callbackCalled = true
-		return "", nil
+		return nil, nil
 	}
 
-	ch, err := newChallengeHandler(white, game.Config{time.Minute}, cb)
+  _, chpub := GetTestPublishers()
+
+	ch, err := newChallengeHandler(white, game.Config{time.Minute}, cb, chpub)
 	if err != nil {
 		t.Error(err)
 	}
@@ -120,7 +143,7 @@ func TestPostJoinNoCookie(t *testing.T) {
 	}
 
 	if postJoinResp.Code != http.StatusUnauthorized {
-		t.Errorf("update resp code (%d) did not match expectation (%d)",
+		t.Errorf("resp code (%d) did not match expectation (%d)",
 			postJoinResp.Code, http.StatusUnauthorized)
 	}
 }
@@ -131,12 +154,14 @@ func TestPostJoinSameCookie(t *testing.T) {
 	callbackCalled := false
 	cb := func(
 		*challengeHandler, game.Config, *http.Cookie, *http.Cookie) (
-		string, error) {
+		*url.URL, error) {
 		callbackCalled = true
-		return "", nil
+		return nil, nil
 	}
 
-	ch, err := newChallengeHandler(white, game.Config{time.Minute}, cb)
+  _, chpub := GetTestPublishers()
+
+	ch, err := newChallengeHandler(white, game.Config{time.Minute}, cb, chpub)
 	if err != nil {
 		t.Error(err)
 	}
@@ -160,7 +185,7 @@ func TestPostJoinSameCookie(t *testing.T) {
 	}
 
 	if postJoinResp.Code != http.StatusBadRequest {
-		t.Errorf("update resp code (%d) did not match expectation (%d)",
+		t.Errorf("resp code (%d) did not match expectation (%d)",
 			postJoinResp.Code, http.StatusBadRequest)
 	}
 }
@@ -172,12 +197,18 @@ func getAcceptedChallenge() (*challengeHandler, error) {
 	callbackCalled := false
 	cb := func(
 		*challengeHandler, game.Config, *http.Cookie, *http.Cookie) (
-		string, error) {
+		*url.URL, error) {
 		callbackCalled = true
-		return "", nil
+    newGamePath, err := url.Parse("/new/game/path/")
+    if err != nil {
+      return nil, err
+    }
+		return newGamePath, nil
 	}
 
-	ch, err := newChallengeHandler(white, game.Config{time.Minute}, cb)
+  _, chpub := GetTestPublishers()
+
+	ch, err := newChallengeHandler(white, game.Config{time.Minute}, cb, chpub)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +250,7 @@ func TestPostJoinAgain(t *testing.T) {
 	ch.ServeHTTP(postJoinResp, postJoinReq)
 
 	if postJoinResp.Code != http.StatusSeeOther {
-		t.Errorf("update resp code (%d) did not match expectation (%d)",
+		t.Errorf("resp code (%d) did not match expectation (%d)",
 			postJoinResp.Code, http.StatusInternalServerError)
 	}
 }
@@ -239,16 +270,22 @@ func TestGetStateAfterAccepted(t *testing.T) {
 	ch.ServeHTTP(getStateResp, getStateReq)
 
 	if getStateResp.Code != http.StatusSeeOther {
-		t.Errorf("update resp code (%d) did not match expectation (%d)",
+		t.Errorf("resp code (%d) did not match expectation (%d)",
 			getStateResp.Code, http.StatusInternalServerError)
 	}
 }
 
 func TestIntegrationWithGameRouter(t *testing.T) {
+  urlBase, err := url.Parse("/")
+  if err != nil {
+    t.Error(err)
+  }
+  evpub, _ := GetTestPublishers()
 	// create game router
-	gr := newGameRouter("/")
+	gr := newGameRouter(urlBase, evpub)
 	// create challenge router (with game router fn as callback)
-	cr := newChallengeRouter("/", gr.addGame)
+
+	cr := newChallengeRouter(urlBase, gr.addGame, evpub)
 
 	// add challenge
 	b, err := json.Marshal(game.Config{TimeControl: 1 * time.Minute})
@@ -315,8 +352,12 @@ func TestIntegrationWithGameRouter(t *testing.T) {
 }
 
 func TestInvalidConfig(t *testing.T) {
-	ch, err :=
-		newChallengeHandler(fakeWhiteCookie(), game.Config{TimeControl: 0}, nil)
+
+  _, chpub := GetTestPublishers()
+
+	ch, err := newChallengeHandler(
+    fakeWhiteCookie(), game.Config{TimeControl: 0}, nil, chpub)
+
 	if err == nil {
 		t.Error("shouldn't be able to make a game with zero time")
 	}

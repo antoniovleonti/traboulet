@@ -1,23 +1,7 @@
 "use strict";
 
-getChallenge();
-
-function hasCookieWithName(name) {
-  let cookies = document.cookie.split(";");
-  for (let i = 0; i < cookies.length; i++) {
-    let nameval = cookies[i].split("=");
-    if (nameval[0].trim() == name) {
-      return true
-    }
-  }
-  return false
-}
-
 function getChallenge() {
-  let urlParts = window.location.href.split("/");
-  let challengeID = urlParts[urlParts.length-1];
-  fetch('/api/challenges/' + challengeID,
-        { method: 'GET', redirect: 'follow' })
+  fetch(getAPIBase(), { method: 'GET', redirect: 'follow' })
       .then(response => {
         if (response.redirected) {
           window.location.href = response.url;
@@ -30,7 +14,7 @@ function getChallenge() {
         if (challenge == null) {
           return;
         }
-        let createdByMe = hasCookieWithName(challenge.creatorID);
+        let createdByMe = (getMyID() == challenge.creatorID);
         document.getElementById("not-found").hidden = true;
         document.getElementById("found").hidden = createdByMe;
         document.getElementById("waiting").hidden = !createdByMe;
@@ -56,10 +40,7 @@ function updateChallengeDisplay(challenge, timeControlSpans) {
 
 document.getElementById('accept-button').addEventListener("click", e => {
   e.preventDefault();
-  let urlParts = window.location.href.split("/");
-  let challengeID = urlParts[urlParts.length-1];
-  fetch('/api/challenges/' + challengeID + '/accept',
-        { method: 'POST', redirect: 'follow' })
+  fetch(getAPIBase() + '/accept', { method: 'POST', redirect: 'follow' })
       .then(response => {
         if (response.redirected) {
           window.location.href = response.url;
@@ -67,19 +48,11 @@ document.getElementById('accept-button').addEventListener("click", e => {
       });
 });
 
-function getUpdate() {
-  let urlParts = window.location.href.split("/");
-  let challengeID = urlParts[urlParts.length-1];
-  fetch('/api/challenges/' + challengeID + '/update',
-        { method: 'GET', redirect: 'follow' })
-      .then(response => {
-        if (response.redirected) {
-          window.location.href = response.url;
-        }
-        response.text().then(txt => {
-          console.log(`${response.status} ${txt}`);
-        });
-      });
-}
+const eventSource =
+    new EventSource(getAPIBase() + "/event-source", { withCredentials: true, });
 
-getUpdate();
+eventSource.addEventListener("game-created", function(e) {
+  window.location.href = e.data;
+});
+
+getChallenge();

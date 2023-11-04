@@ -3,9 +3,8 @@ package server
 import (
 	"encoding/json"
 	"game"
-	"github.com/antoniovleonti/sse"
 	"github.com/julienschmidt/httprouter"
-	"log"
+  "evtpub"
 	"net/http"
 	"sync"
 	"time"
@@ -17,19 +16,25 @@ import (
 type gameHandler struct {
 	gm                *game.GameManager
 	router            *httprouter.Router
-	pub               publisher
 	completionTime    *time.Time
 	timeMutex         sync.Mutex
 	deleteChallengeCb deleteChallengeFn
+  channelPub evtpub.ChannelPublisher
 }
 
 func newGameHandler(
-	deleteChallengeCb deleteChallengeFn, config game.Config,
-	white, black *http.Cookie) (*gameHandler, error) {
+	deleteChallengeCb deleteChallengeFn,
+  channelPub evtpub.ChannelPublisher,
+  config game.Config,
+  white, black *http.Cookie,
+)(
+  *gameHandler,
+  error,
+){
 	gh := gameHandler{
 		router:            httprouter.New(),
-		pub:               publisher{},
 		deleteChallengeCb: deleteChallengeCb,
+    channelPub: channelPub,
 	}
 	gm, err := game.NewGameManager(
     config, white, black, gh.publishUpdate, gh.markComplete,
@@ -39,13 +44,10 @@ func newGameHandler(
 	}
 	gh.gm = gm
 
-	gh.router.GET("/event-stream", gh.getEventStream)
 	gh.router.GET("/state", gh.getState)
 	gh.router.POST("/move", gh.postMove)
 	gh.router.POST("/resignation", gh.postResignation)
 	gh.router.POST("/rematch-offer", gh.postRematchOffer)
-
-	go gh.periodicallySendKeepAlive()
 
 	return &gh, nil
 }
@@ -55,48 +57,13 @@ func (gh *gameHandler) publishUpdate() {
 	if err != nil {
 		panic("couldn't marshal game state")
 	}
-	event := sse.Event{
-		Event: "state-push",
-		Data:  string(b),
-	}
 
-	gh.pub.do(func(w http.ResponseWriter) {
-		err := event.Render(w)
-		if err != nil {
-			log.Printf("Error writing event: %v\n", err)
-		}
-	}, false)
-}
-
-func (gh *gameHandler) periodicallySendKeepAlive() {
-	for {
-		time.Sleep(1 * time.Minute)
-		gh.sendKeepAlive()
-	}
-}
-
-func (gh *gameHandler) sendKeepAlive() {
-	event := sse.Event{
-		Event: "keep-alive",
-		Data:  "",
-	}
-
-	gh.pub.do(func(w http.ResponseWriter) {
-		err := event.Render(w)
-		if err != nil {
-			log.Printf("Error writing event: %v\n", err)
-		}
-	}, false)
+  gh.channelPub.Push("state-push", string(b))
 }
 
 // Convenience method
 func (gh *gameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	gh.router.ServeHTTP(w, r)
-}
-
-func (gh *gameHandler) getEventStream(
-	w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	gh.pub.subscribe(w, r.Context().Done())
 }
 
 func (gh *gameHandler) getState(
@@ -192,8 +159,9 @@ func (gh *gameHandler) DurationSinceCompletion() *time.Duration {
 	return &d
 }
 
-func (gh *gameHandler) DeleteChallenge() {
+func (gh *gameHandler) TearDown() {
 	if gh.deleteChallengeCb != nil {
 		gh.deleteChallengeCb()
 	}
+  gh.channelPub.Delete()
 }

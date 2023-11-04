@@ -6,12 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"game"
-	"github.com/r3labs/sse/v2"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+  "evtpub"
 )
 
 func fakeWhiteCookie() *http.Cookie {
@@ -35,10 +35,11 @@ func fakeBlackCookie() *http.Cookie {
 func TestNewGameHandler(t *testing.T) {
 	// Make sure gameHandler implements the http.Handler interface
 	var _ http.Handler = (*gameHandler)(nil)
+  _, chpub := GetTestPublishers()
 
 	gh, err := newGameHandler(
-		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
-		fakeBlackCookie())
+		func() {}, *chpub, game.Config{TimeControl: 1 * time.Minute},
+    fakeWhiteCookie(), fakeBlackCookie())
 	if err != nil {
 		t.Error(err)
 	}
@@ -48,9 +49,10 @@ func TestNewGameHandler(t *testing.T) {
 }
 
 func TestGetState(t *testing.T) {
+  _, chpub := GetTestPublishers()
 	gh, err := newGameHandler(
-		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
-		fakeBlackCookie())
+		func() {}, *chpub, game.Config{TimeControl: 1 * time.Minute},
+    fakeWhiteCookie(), fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,8 +83,10 @@ func TestGetState(t *testing.T) {
 	}
 }
 
-func postMove(t *testing.T, gh *gameHandler, body []byte,
-	cookies []*http.Cookie, expectedStatus int) {
+func postMove(
+  t *testing.T, gh *gameHandler, evpub *evtpub.MockEventPublisher, body []byte,
+  cookies []*http.Cookie, expectedStatus int) {
+
 	// Build request
 	postMoveReq, err := http.NewRequest("POST", "/move", bytes.NewReader(body))
 	if err != nil {
@@ -92,13 +96,14 @@ func postMove(t *testing.T, gh *gameHandler, body []byte,
 		postMoveReq.AddCookie(c)
 	}
 
-	handleReqCheckEventStream(gh, postMoveReq, expectedStatus)
+	handleReqCheckEventStream(gh, evpub, postMoveReq, expectedStatus)
 }
 
 func TestPostValidMove(t *testing.T) {
+  evpub, chpub := GetTestPublishers()
 	gh, err := newGameHandler(
-		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
-		fakeBlackCookie())
+		func() {}, *chpub, game.Config{TimeControl: 1 * time.Minute},
+    fakeWhiteCookie(), fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,13 +118,15 @@ func TestPostValidMove(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	postMove(t, gh, b, []*http.Cookie{gh.gm.GetWhiteCookie()}, http.StatusOK)
+	postMove(
+    t, gh, evpub, b, []*http.Cookie{gh.gm.GetWhiteCookie()}, http.StatusOK)
 }
 
 func TestPostInvalidMove(t *testing.T) {
+  evpub, chpub := GetTestPublishers()
 	gh, err := newGameHandler(
-		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
-		fakeBlackCookie())
+		func() {}, *chpub, game.Config{TimeControl: 1 * time.Minute},
+    fakeWhiteCookie(), fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,14 +134,15 @@ func TestPostInvalidMove(t *testing.T) {
 		t.Error("game handler is nil")
 	}
 
-	postMove(t, gh, []byte("blah"), []*http.Cookie{gh.gm.GetWhiteCookie()},
+	postMove(t, gh, evpub, []byte("blah"), []*http.Cookie{gh.gm.GetWhiteCookie()},
 		http.StatusBadRequest)
 }
 
 func TestPostMoveNoCookie(t *testing.T) {
+  evpub, chpub := GetTestPublishers()
 	gh, err := newGameHandler(
-		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
-		fakeBlackCookie())
+		func() {}, *chpub, game.Config{TimeControl: 1 * time.Minute},
+    fakeWhiteCookie(), fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,13 +157,14 @@ func TestPostMoveNoCookie(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	postMove(t, gh, b, []*http.Cookie{}, http.StatusUnauthorized)
+	postMove(t, gh, evpub, b, []*http.Cookie{}, http.StatusUnauthorized)
 }
 
 func TestPostMoveEmptyBody(t *testing.T) {
+  evpub, chpub := GetTestPublishers()
 	gh, err := newGameHandler(
-		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
-		fakeBlackCookie())
+		func() {}, *chpub, game.Config{TimeControl: 1 * time.Minute},
+    fakeWhiteCookie(), fakeBlackCookie())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,89 +172,17 @@ func TestPostMoveEmptyBody(t *testing.T) {
 		t.Error("game handler is nil")
 	}
 
-	postMove(t, gh, []byte(""), []*http.Cookie{gh.gm.GetWhiteCookie()},
+	postMove(
+    t, gh, evpub, []byte(""), []*http.Cookie{gh.gm.GetWhiteCookie()},
 		http.StatusBadRequest)
 }
 
-func TestSendKeepAlive(t *testing.T) {
-	gh, err := newGameHandler(
-		func() {}, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
-		fakeBlackCookie())
-	if err != nil {
-		t.Fatal(err)
-	}
-	server := httptest.NewServer(gh)
-	url := server.URL
-
-	msgsReceived := 0
-	done := make(chan struct{})
-	handleUpdate := func(msg *sse.Event) {
-		msgsReceived++
-		if string(msg.Event) != "keep-alive" {
-			t.Errorf("Expected msg.Event == \"keep-alive\"; got %q", msg.Event)
-		}
-		log.Print("Sending done signal.")
-		done <- struct{}{}
-	}
-	updateClient := sse.NewClient(url + "/event-stream")
-	go func() {
-		err = updateClient.SubscribeRaw(handleUpdate)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
-
-	log.Print("Waiting for subscriber to be ready.")
-	for {
-		if gh.pub.subscribers.Len() != 0 {
-			break
-		}
-		time.Sleep(1 * time.Millisecond)
-	}
-
-	gh.sendKeepAlive()
-	log.Print("Waiting on done signal.")
-	<-done
-	if msgsReceived != 1 {
-		t.Error("expected 1 message")
-	}
-}
-
-func TestDeleteChallenge(t *testing.T) {
-	cbCalled := false
-	cb := func() {
-		cbCalled = true
-	}
-	gh, _ := newGameHandler(
-		cb, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
-		fakeBlackCookie())
-
-	gh.DeleteChallenge()
-	if !cbCalled {
-		t.Error("callback not called")
-	}
-}
-
 func handleReqCheckEventStream(
-	gh *gameHandler, req *http.Request, expectedStatus int) error {
-	// set up a server (sse client requires this)
-	server := httptest.NewServer(gh)
-	url := server.URL
-	// Prepare event listener
-	msgsReceived := 0
-	done := make(chan struct{})
-	handleUpdate := func(msg *sse.Event) {
-		msgsReceived++
-		log.Print(string(msg.Data))
-		log.Print("sending done signal")
-		done <- struct{}{}
-	}
-	updateClient := sse.NewClient(url + "/event-stream")
-	go func() {
-		updateClient.SubscribeRaw(handleUpdate)
-	}()
-	// Wait for the subscriber to get registered
-	time.Sleep(5 * time.Millisecond)
+	gh *gameHandler, evpub *evtpub.MockEventPublisher, req *http.Request,
+  expectedStatus int) error {
+
+  pushesBefore := len(evpub.Channels[testChannelPath].Pushes)
+
 	// Run the request through our handler
 	resp := httptest.NewRecorder()
 	gh.ServeHTTP(resp, req)
@@ -260,71 +197,76 @@ func handleReqCheckEventStream(
 
 	// Check we recieved a game update
 	if expectedStatus == http.StatusOK {
-		log.Print("awaiting done signal")
-		<-done
-		if msgsReceived != 1 {
-			return errors.New("expected subscriber to receive exactly one message")
-		}
+    // Check that event publisher recieved an update.
+    if len(evpub.Channels[testChannelPath].Pushes) != pushesBefore + 1 {
+      return errors.New("expected to publish exactly 1 event")
+    }
 	}
+
 	return nil
 }
 
 func TestPostResignation(t *testing.T) {
+  evpub, chpub := GetTestPublishers()
 	gh, _ := newGameHandler(
-		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		nil, *chpub, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 
 	req, err := http.NewRequest("POST", "/resignation", nil)
 	req.AddCookie(fakeWhiteCookie())
 
-	err = handleReqCheckEventStream(gh, req, http.StatusOK)
+	err = handleReqCheckEventStream(gh, evpub, req, http.StatusOK)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestPostResignationNoCookie(t *testing.T) {
+  evpub, chpub := GetTestPublishers()
 	gh, _ := newGameHandler(
-		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		nil, *chpub, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 
 	req, err := http.NewRequest("POST", "/resignation", nil)
 
-	err = handleReqCheckEventStream(gh, req, http.StatusUnauthorized)
+	err = handleReqCheckEventStream(gh, evpub, req, http.StatusUnauthorized)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestPostResignationTwice(t *testing.T) {
+  evpub, chpub := GetTestPublishers()
 	gh, _ := newGameHandler(
-		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		nil, *chpub, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 
 	req, err := http.NewRequest("POST", "/resignation", nil)
 	req.AddCookie(fakeWhiteCookie())
 
-	err = handleReqCheckEventStream(gh, req, http.StatusOK)
+	err = handleReqCheckEventStream(gh, evpub, req, http.StatusOK)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Will fail the second time because the game's already ended.
-	err = handleReqCheckEventStream(gh, req, http.StatusBadRequest)
+	err = handleReqCheckEventStream(gh, evpub, req, http.StatusBadRequest)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestPostRematchOffer(t *testing.T) {
+  evpub, chpub := GetTestPublishers()
 	gh, _ := newGameHandler(
-		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		nil, *chpub, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 
+  // end the game
 	req, err := http.NewRequest("POST", "/resignation", nil)
 	req.AddCookie(fakeWhiteCookie())
 
-	err = handleReqCheckEventStream(gh, req, http.StatusOK)
+	err = handleReqCheckEventStream(gh, evpub, req, http.StatusOK)
 	if err != nil {
 		t.Error(err)
 	}
@@ -335,7 +277,7 @@ func TestPostRematchOffer(t *testing.T) {
   }
   whiteRematchReq.AddCookie(fakeWhiteCookie())
 
-	err = handleReqCheckEventStream(gh, whiteRematchReq, http.StatusOK)
+	err = handleReqCheckEventStream(gh, evpub, whiteRematchReq, http.StatusOK)
 	if err != nil {
 		t.Error(err)
 	}
@@ -346,21 +288,22 @@ func TestPostRematchOffer(t *testing.T) {
   }
   blackRematchReq.AddCookie(fakeBlackCookie())
 
-	err = handleReqCheckEventStream(gh, blackRematchReq, http.StatusOK)
+	err = handleReqCheckEventStream(gh, evpub, blackRematchReq, http.StatusOK)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestPostRematchOfferNoCookie(t *testing.T) {
+  evpub, chpub := GetTestPublishers()
 	gh, _ := newGameHandler(
-		nil, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
+		nil, *chpub, game.Config{TimeControl: 1 * time.Minute}, fakeWhiteCookie(),
 		fakeBlackCookie())
 
 	req, err := http.NewRequest("POST", "/resignation", nil)
 	req.AddCookie(fakeWhiteCookie())
 
-	err = handleReqCheckEventStream(gh, req, http.StatusOK)
+	err = handleReqCheckEventStream(gh, evpub, req, http.StatusOK)
 	if err != nil {
 		t.Error(err)
 	}
@@ -370,7 +313,8 @@ func TestPostRematchOfferNoCookie(t *testing.T) {
     t.Error(nil)
   }
 
-	err = handleReqCheckEventStream(gh, whiteRematchReq, http.StatusBadRequest)
+	err =
+    handleReqCheckEventStream(gh, evpub, whiteRematchReq, http.StatusBadRequest)
 	if err == nil {
 		t.Error("expected request to fail")
 	}
