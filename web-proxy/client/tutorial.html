@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/tailwindcss@%5E3/src/css/preflight.css">
+<link rel="stylesheet" type="text/css" href="/styles/base.css">
+
+<head><title>Traboulet | Challenge</title><head>
+
+<body>
+
+<h1>
+<a id=home-anchor href="/">Traboulet</a> |
+<a id=tutorial-anchor href="/tutorial.html">How to play</a>
+</h1>
+
+<div class=tl-content>
+
+<h2>How to play</h2>
+
+<h3>Objective</h3>
+
+<p>
+To win Traboulet, you be the first to accomplish EITHER of the
+following:<br>
+- Capture 7 red marbles.<br>
+- Make it impossible for your opponent to move (e.g. by capturing or
+  surrounding all of their pieces).
+</p>
+
+<h3>Marble movement</h3>
+<p>
+The game takes place on a 7x7 board, and the movement of the marbles follows
+strict rules:<br>
+- You may only push your own color marbles (WHITE or BLACK).<br>
+- A marble must have an empty slot behind it to be pushed (e.g. to push a
+  marble NORTH, the slot to the SOUTH of the marble must be empty).<br>
+- Marbles pushed into other marbles are pushed together.<br>
+- You may never play a move that captures one of your own marbles.<br>
+- You may not push your marble in the opposite direction it was pushed on your
+  opponent's last move (more on this later [*]).<br>
+</p>
+
+<h3>Captures</h3>
+<p>
+Marbles are captured by simply pushing them off the board. Captured marbles
+will never reenter the game. You can capture both red marbles and your
+opponent's marbles. You cannot capture your own marbles.
+</p>
+
+<h3>Pushing back / "ko" [*]</h3>
+<p>
+Pushing your opponent around is an important and fun part of the game and
+happens all the time. Understanding the specifics of what happens when you push
+or get pushed is necessary for so many fundamental tactical ideas.
+</p>
+
+<p>
+The rule is theoretically pretty simple: if your marble is pushed on your
+opponent's turn, you can't push back FROM THAT MARBLE for one move.
+</p>
+
+<p>
+Note the emphasis on "from that marble"... If a particular marble did not move
+during your opponent's last move, you are still free to do whatever you like
+with it, including push back if possible. This restriction only applies when
+the marble you want to push is at the "back" of the chain and was pushed in the
+opposite direction by your opponent.
+</p>
+
+<p>
+Also, note that after you make some other move, if your opponent doesn't push
+you again, you are perfectly free to push them back then. The restriction only
+lasts for one move; only the last move is relevant in determining whether a
+given move is legal.
+</p>
+
+<p>
+Don't worry if you're confused. Just play a game and experiment and you'll
+figure it out quickly.
+</p>
+
+<h3>Threefold repetition</h3>
+<p>
+While I've never seen it in a real game, theoretical draws do exist. While
+there is no draw offer in this app, I've added a rule for threefold repetition.
+If a POSITION (i.e., roughly, an arrangement of pieces and whose turn it is)
+occurs three times, the game automatically marks it as a draw.
+</p>
+
+<h3>Basic strategy</h3>
+<p>
+Moves are a commodity in Traboulet. You only get so many of them, and your
+marbles are quite slow-- they only ever move a single space per turn. In order
+to win, you must spend as many of those precious moves as possible capturing
+reds, setting yourself up to capture reds, and preventing your opponent from
+capturing reds.
+</p>
+
+<p>
+If you waste moves capturing your opponent's pieces, I hope your opponent is
+also wasting their time too... I usually am quite happy when my opponent is
+capturing my marble, because my best, most active marbles are usually not
+available to be captured (or I've done something wrong!).
+</p>
+
+<p>
+Also, games often end with very tactical, tricky endgames, so set yourself up
+for success by activating your pieces and keeping them near the reds.
+</p>
+
+<p>
+Good luck!
+</p>
+
+</div>
+</body>
+
+<script src='/scripts/utils.js'></script>
+<script src='/scripts/challenge_browser.js'></script>
+<script src='/scripts/challenge.js'></script>
+
+</html>
