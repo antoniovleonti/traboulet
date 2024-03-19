@@ -150,12 +150,14 @@
 }
 #move-history li {
   display: inline;
+  padding: 5px;
 }
 #move-history li::after {
   content: ", ";
 }
 #move-history li:last-child::after {
   content: "";
+  padding-right: 10px;
 }
 
 #move-history-controls {

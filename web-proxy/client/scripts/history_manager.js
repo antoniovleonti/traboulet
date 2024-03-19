@@ -3,6 +3,7 @@
 class HistoryManager {
   boardDisplay_;
   moveOl_;
+  scrollWrapper_;
 
   currentSnapshotIdx_;
   history_;
@@ -10,9 +11,10 @@ class HistoryManager {
   myID_;
   isYourTurn_;
 
-  constructor(boardDisplay, moveOl) {
+  constructor(boardDisplay, moveOl, scrollWrapper) {
     this.boardDisplay_ = boardDisplay;
     this.moveOl_ = moveOl;
+    this.scrollWrapper_ = scrollWrapper;
 
     this.currentSnapshotIdx_ = 0;
     this.history_ = null;
@@ -46,6 +48,7 @@ class HistoryManager {
     this.clearMoveOl();
 
     let selectedAnchor;
+    let selectedLi;
     for (let i = 0; i < history.length; i++) {
       const move = history[i].lastMove;
       const li = document.createElement("li");
@@ -60,6 +63,7 @@ class HistoryManager {
 
       if (i == this.currentSnapshotIdx_) {
         selectedAnchor = a;
+        selectedLi = li;
       } else {
         const this_ = this;
         a.addEventListener('click', (e) => {
@@ -75,7 +79,25 @@ class HistoryManager {
     selectedAnchor.classList.add('rounded');
     selectedAnchor.classList.add('padded-sm');
     selectedAnchor.classList.add('highlighted');
-    selectedAnchor.scrollIntoView({ inline: 'center', block: 'center' });
+
+    // Scroll to selected element
+    const offsetLeft = selectedLi.offsetLeft - this.moveOl_.offsetLeft;
+    if (offsetLeft < this.scrollWrapper_.scrollLeft) {
+      console.log("scrolling left...");
+      this.scrollWrapper_.scrollTo({
+        left: offsetLeft,
+        behavior: "smooth",
+      });
+    }
+    const offsetRight = offsetLeft + selectedLi.offsetWidth;
+    if (offsetRight > this.scrollWrapper_.scrollLeft +
+        this.scrollWrapper_.clientWidth) {
+      console.log("scrolling right...");
+      this.scrollWrapper_.scrollTo({
+        left: offsetRight - this.scrollWrapper_.clientWidth,
+        behavior: "smooth",
+      });
+    }
   }
 
   render() {

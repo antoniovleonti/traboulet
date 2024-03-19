@@ -29,7 +29,8 @@ const playerDisplayManager = new PlayerDisplayManager(
     document.getElementById('rematch-offer-count'));
 
 const historyManager =
-    new HistoryManager(boardDisplay, document.getElementById('move-history'));
+    new HistoryManager(boardDisplay, document.getElementById('move-history'),
+                       document.getElementById('move-history-wrapper'));
 
 function getStateAndUpdate() {
   fetch(getAPIBase() + '/state')
@@ -118,6 +119,5 @@ eventSource.addEventListener('state-push', function(e) {
 eventSource.onerror = function(e) {
   console.log(e);
 };
-
 
 getStateAndUpdate();
